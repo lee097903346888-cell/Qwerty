@@ -652,13 +652,13 @@ html.meadow-tablet #fullscreenHelp p{font-size:18px}
     <button id="voiceBtn" class="round" type="button" aria-label="按住說集合" title="按住麥克風並說「集合」，放開停止">🎙️</button>
     <button id="qrShareBtn" class="round" type="button" title="顯示分享 QR 碼" aria-label="放大分享 QR 碼"><svg viewBox="0 0 24 24" width="25" height="25" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3z"/><path d="M5.5 5.5h2v2h-2zM16.5 5.5h2v2h-2zM5.5 16.5h2v2h-2z" fill="currentColor" stroke="none"/><path d="M14 14h3v3h-3zM20 14v3h-2M14 20h3m2-1v2h2"/></svg></button>
     <button id="zoomInBtn" class="round" type="button" aria-label="拉近地圖" title="拉近 2.5D 視角">＋</button>
-    <button id="zoomOutBtn" class="round" type="button" aria-label="拉遠地圖" title="拉遠地圖，最遠可看到四區總覽">－</button>
+    <button id="zoomOutBtn" class="round" type="button" aria-label="拉遠地圖" title="拉遠鏡頭，不會露出地圖邊界">－</button>
   </div>
   <div class="worldNav" aria-label="開放世界導航">
     <span id="worldCoords" aria-live="off">🌍 X 0 · Y 0</span>
     <select id="biomeJump" aria-label="快速前往四大生態區" title="快速探索四大生態區">
       <option value="pick">🧭 選擇生態區</option>
-      <option value="overview">🗺️ 四區總覽</option>
+      <option value="overview">🗺️ 最大安全俯瞰</option>
       <option value="savanna">🦒 非洲草原</option>
       <option value="lava">🌋 岩漿地區</option>
       <option value="snow">❄️ 冰原雪地</option>
@@ -790,7 +790,7 @@ html.meadow-tablet #fullscreenHelp p{font-size:18px}
   <div class="settingsRow" id="defaultViewRow">
     <div style="flex:1;min-width:0">
       <div class="settingsName">🔭 預設視野距離 <span id="defaultZoomValue">0.72 倍</span></div>
-      <div class="settingsDesc">依平板畫面與 7,200 × 5,400 地圖自動限制遠景，避免縮得太小。完整四區可用「四區總覽」查看。預設視角只儲存在本裝置。</div>
+      <div class="settingsDesc">固定正交 3D 鏡頭只改變視野，不會變更花草、樹木、動物在世界中的尺寸。最遠距離依平板長寬及地圖邊界自動限制，確保不會拍到地圖外。</div>
       <input type="range" id="defaultZoomSetting" min="0.18" max="1.20" step="0.01" value="0.72" style="width:100%;margin-top:8px" aria-label="預設俯瞰倍率">
     </div>
   </div>
@@ -1050,7 +1050,7 @@ const view25D=true;
    後續擴建可以調整視角、區域邊界、路線、樹木分布及顏色，
    不需要改動動物存檔、碰撞、骨骼或攝影機手勢。 */
 const ECO_MAP_25D=Object.freeze({
-  version:4,
+  version:5,
   camera:Object.freeze({rotation:-Math.PI/6,pitch:.64,initialZoom:.72,focusY:355}),
   biomes:Object.freeze({spaceEnd:-720,skyEnd:100,shoreLogicalY:585}),
   terrain:Object.freeze({tile:170,detailSpacing:265,riverX:730,riverWidth:114,
@@ -1080,10 +1080,10 @@ const FOUR_BIOME_MAP=Object.freeze({
   regionSpan:3600,borderX:1600,borderY:1200,
   minX:-2000,maxX:5200,minY:-1500,maxY:3900,width:7200,height:5400,
   zones:Object.freeze([
-    Object.freeze({id:'savanna',name:'非洲草原',icon:'🦒',x:-200,y:-150,ground:'#c7b46a',night:'#5f654c',detail:'#e3cf84'}),
-    Object.freeze({id:'lava',name:'岩漿地區',icon:'🌋',x:3400,y:-150,ground:'#493b42',night:'#251e31',detail:'#71515b'}),
-    Object.freeze({id:'snow',name:'冰原雪地',icon:'❄️',x:-200,y:2550,ground:'#c4e0e8',night:'#617d9c',detail:'#e6f5f4'}),
-    Object.freeze({id:'mushroom',name:'蘑菇花朵區',icon:'🍄',x:3400,y:2550,ground:'#719c83',night:'#3c5660',detail:'#a8cda1'})
+    Object.freeze({id:'savanna',name:'非洲草原',icon:'🦒',x:-200,y:-150,ground:'#d8d8aa',night:'#697d72',detail:'#fae6ad'}),
+    Object.freeze({id:'lava',name:'岩漿地區',icon:'🌋',x:3400,y:-150,ground:'#d5adb9',night:'#765869',detail:'#f7c2b9'}),
+    Object.freeze({id:'snow',name:'冰原雪地',icon:'❄️',x:-200,y:2550,ground:'#d5ebf3',night:'#789fae',detail:'#f4ffff'}),
+    Object.freeze({id:'mushroom',name:'蘑菇花朵區',icon:'🍄',x:3400,y:2550,ground:'#a4d7be',night:'#547f79',detail:'#e3e3b3'})
   ]),
   landmarks:Object.freeze([
     {x:-640,y:650,kind:'acacia',scale:1.65},{x:380,y:120,kind:'acacia',scale:1.28},
@@ -1092,19 +1092,30 @@ const FOUR_BIOME_MAP=Object.freeze({
     {x:3280,y:2680,kind:'giantMushroom',scale:2},{x:4050,y:2250,kind:'flower',scale:1.65}
   ])
 });
-// 平板新地圖改以相機可見範圍決定縮放，避免舊版超遠比例讓整個世界只佔幾個像素。
+// 以固定正交鏡頭的「完整視野足跡」決定最遠距離：四個螢幕角落必須
+// 全都位於有限地圖內。只動相機 zoom，不改任何物件在世界中的尺寸。
 const MIN_25D_ZOOM=.18;
+const WORLD_CAMERA_EDGE_PADDING=68;
+function visible25DHalfExtents(zoom){
+  const halfWidth=(innerWidth||1024)/Math.max(.001,zoom)/2;
+  const halfDepth=(innerHeight||768)/Math.max(.001,zoom)/2/ECO_MAP_25D.camera.pitch;
+  return {
+    x:Math.abs(CAMERA_25D_COS)*halfWidth+Math.abs(CAMERA_25D_SIN)*halfDepth,
+    y:Math.abs(CAMERA_25D_SIN)*halfWidth+Math.abs(CAMERA_25D_COS)*halfDepth
+  };
+}
 function minimum25DZoom(){
-  return Math.max(MIN_25D_ZOOM,Math.min(.42,Math.max(
-    (innerWidth||1024)/(FOUR_BIOME_MAP.width*.60),
-    (innerHeight||768)/(FOUR_BIOME_MAP.height*.90*ECO_MAP_25D.camera.pitch)
-  )));
+  const screenW=innerWidth||1024,screenH=innerHeight||768;
+  const cos=Math.abs(CAMERA_25D_COS),sin=Math.abs(CAMERA_25D_SIN);
+  const groundH=screenH/CAMERA_25D_PITCH;
+  const availableW=FOUR_BIOME_MAP.width-WORLD_CAMERA_EDGE_PADDING*2;
+  const availableH=FOUR_BIOME_MAP.height-WORLD_CAMERA_EDGE_PADDING*2;
+  return Math.max(MIN_25D_ZOOM,
+    (cos*screenW+sin*groundH)/availableW,
+    (sin*screenW+cos*groundH)/availableH);
 }
 function fullMapOverviewZoom(){
-  const w=FOUR_BIOME_MAP.width,h=FOUR_BIOME_MAP.height;
-  const projectedWidth=Math.abs(CAMERA_25D_COS)*w+Math.abs(CAMERA_25D_SIN)*h;
-  const projectedHeight=ECO_MAP_25D.camera.pitch*(Math.abs(CAMERA_25D_SIN)*w+Math.abs(CAMERA_25D_COS)*h);
-  return Math.min((innerWidth||1024)*.86/projectedWidth,(innerHeight||768)*.80/projectedHeight);
+  return minimum25DZoom(); // 在地圖內看最大範圍，而非將地圖縮小成孤島。
 }
 function biomeBoundaryX(y){
   return FOUR_BIOME_MAP.borderX+170*Math.sin(y/680)+80*Math.sin(y/205+1.4);
@@ -1887,9 +1898,14 @@ const LAND_EXTENSION=140; // 既有陸地擴充保持原值；新的縱向高度
 const OPEN_WORLD_LIMIT=10000000; // 舊版資料安全界線；新地圖使用下方有限的實際邊界。
 function clampCamera(){
   if(view25D){
-    const marginX=440,marginY=330;
-    state.cam.x=Number.isFinite(state.cam.x)?clamp(state.cam.x,FOUR_BIOME_MAP.minX+marginX,FOUR_BIOME_MAP.maxX-marginX):0;
-    state.cam.y=Number.isFinite(state.cam.y)?clamp(state.cam.y,FOUR_BIOME_MAP.minY+marginY,FOUR_BIOME_MAP.maxY-marginY):visualWorldY(355);
+    state.cam.zoom=clamp(Number.isFinite(state.cam.zoom)?state.cam.zoom:defaultViewZoom,minimum25DZoom(),2.6);
+    const half=visible25DHalfExtents(state.cam.zoom);
+    const left=FOUR_BIOME_MAP.minX+WORLD_CAMERA_EDGE_PADDING+half.x;
+    const right=FOUR_BIOME_MAP.maxX-WORLD_CAMERA_EDGE_PADDING-half.x;
+    const top=FOUR_BIOME_MAP.minY+WORLD_CAMERA_EDGE_PADDING+half.y;
+    const bottom=FOUR_BIOME_MAP.maxY-WORLD_CAMERA_EDGE_PADDING-half.y;
+    state.cam.x=clamp(Number.isFinite(state.cam.x)?state.cam.x:0,Math.min(left,right),Math.max(left,right));
+    state.cam.y=clamp(Number.isFinite(state.cam.y)?state.cam.y:visualWorldY(355),Math.min(top,bottom),Math.max(top,bottom));
     return;
   }
   const view=innerWidth/(2*state.cam.zoom);
@@ -1921,7 +1937,7 @@ $('#biomeJump').addEventListener('change',e=>{
     state.cam.x=FOUR_BIOME_MAP.borderX;
     state.cam.y=FOUR_BIOME_MAP.borderY;
     state.cam.zoom=fullMapOverviewZoom();
-    toast('🗺️ 四大生態區總覽：可拖曳移動或放大探索');
+    toast('🗺️ 最大安全俯瞰：完整視野仍在地圖內');
   }else{
     const zone=FOUR_BIOME_MAP.zones.find(z=>z.id===choice);
     if(zone){state.cam.x=zone.x;state.cam.y=zone.y;state.cam.zoom=Math.max(.68,defaultViewZoom);toast(zone.icon+' 已抵達'+zone.name);}
@@ -1962,7 +1978,7 @@ syncUploadOrientation();
 
 function zoom(f, sx = innerWidth / 2, sy = innerHeight / 2){
   const before = screenToWorld(sx, sy);
-  state.cam.zoom = Math.max(view25D?Math.min(minimum25DZoom(),fullMapOverviewZoom()):.154, Math.min(2.6, state.cam.zoom * f));
+  state.cam.zoom = Math.max(view25D?minimum25DZoom():.154, Math.min(2.6, state.cam.zoom * f));
   const after = screenToWorld(sx, sy);
   state.cam.x += before.x - after.x;
   state.cam.y += visualWorldY(before.y) - visualWorldY(after.y);
@@ -3754,7 +3770,7 @@ function draw25DTerrain(now,phase,season){
   }
 }
 
-/* ========== 四大生態區平板世界 V4 ========== */
+/* ========== 四大生態區平板世界 V5／柔和黏土玩具風格 ========== */
 // 舊版 2.5D 繪製器留作回溯；新地圖是有限大小的四區地平面，
 // 每個地景模型由真實 XYZ 頂點共用固定正交 3D 鏡頭投影。
 function clipFourBiomeX(b,right){
@@ -3801,15 +3817,14 @@ function drawFourBiomeRoads(b,night){
       const y=row+90*Math.sin(x/4300+row*.0003)+38*Math.sin(x/1900);
       if(x===x0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
     }
-    ctx.strokeStyle=night?'#3b4852':'rgba(78,75,64,.34)';ctx.lineWidth=160;ctx.stroke();
-    ctx.strokeStyle=night?'#7b7c79':'#c0ad91';ctx.lineWidth=113;ctx.stroke();
-    ctx.strokeStyle='rgba(255,250,211,.34)';ctx.lineWidth=7;
+    ctx.strokeStyle=night?'#9d8a98':'rgba(209,153,138,.42)';ctx.lineWidth=160;ctx.stroke();
+    ctx.strokeStyle=night?'#bdadb1':'#f2d0ad';ctx.lineWidth=113;ctx.stroke();
+    ctx.strokeStyle='rgba(255,253,235,.70)';ctx.lineWidth=7;
     ctx.setLineDash([60,90]);ctx.stroke();ctx.setLineDash([]);
   }
 }
 function drawFourBiomeMacroFeatures(b,night){
-  const zoom=state.cam.zoom;
-  const step=3200*Math.max(1,Math.ceil(.12/zoom));
+  const step=3200;
   for(let x=Math.floor(b.minX/step)*step;x<b.maxX+step;x+=step){
     for(let y=Math.floor(b.minY/step)*step;y<b.maxY+step;y+=step){
       const seed=x*.00039+y*.00071;
@@ -3817,21 +3832,21 @@ function drawFourBiomeMacroFeatures(b,night){
       const kind=biomeAt(cx,cy).id,r=step*(.15+forestHash(seed+17)*.14);
       if(kind==='savanna'){
         if(forestHash(seed+23)<.55)continue;
-        ctx.fillStyle=night?'rgba(71,91,78,.48)':'rgba(122,137,76,.30)';
+        ctx.fillStyle=night?'rgba(71,91,78,.34)':'rgba(177,192,130,.40)';
         ctx.beginPath();ctx.ellipse(cx,cy,r*1.3,r*.6,-.13,0,Math.PI*2);ctx.fill();
         if(forestHash(seed+33)>.78){
-          ctx.fillStyle=night?'#426472':'#5caaaf';ctx.beginPath();
+          ctx.fillStyle=night?'#799b9e':'#a6d5c2';ctx.beginPath();
           ctx.ellipse(cx,cy,r*.60,r*.24,0,0,Math.PI*2);ctx.fill();
         }
       }else if(kind==='lava'){
-        ctx.fillStyle=night?'rgba(14,11,28,.37)':'rgba(33,24,38,.35)';
+        ctx.fillStyle=night?'rgba(91,56,84,.35)':'rgba(190,123,147,.29)';
         ctx.beginPath();ctx.ellipse(cx,cy,r*1.2,r*.68,.4,0,Math.PI*2);ctx.fill();
         if(forestHash(seed+13)>.36){
           ctx.beginPath();ctx.moveTo(cx-r*.8,cy+r*.35);
           ctx.lineTo(cx-r*.13,cy-r*.30);ctx.lineTo(cx+r*.23,cy+r*.09);
           ctx.lineTo(cx+r*.82,cy-r*.38);
-          ctx.strokeStyle='#7a242a';ctx.lineWidth=r*.17;ctx.stroke();
-          ctx.strokeStyle=night?'#ff7042':'#ff8a34';ctx.lineWidth=r*.085;ctx.stroke();
+          ctx.strokeStyle='#ba7e95';ctx.lineWidth=r*.17;ctx.stroke();
+          ctx.strokeStyle=night?'#ffa67b':'#ffc38f';ctx.lineWidth=r*.085;ctx.stroke();
         }
       }else if(kind==='snow'){
         ctx.fillStyle=night?'rgba(150,204,232,.24)':'rgba(255,255,255,.47)';
@@ -3842,17 +3857,17 @@ function drawFourBiomeMacroFeatures(b,night){
           ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=r*.06;ctx.stroke();
         }
       }else{
-        ctx.fillStyle=night?'rgba(89,74,131,.35)':'rgba(149,100,164,.27)';
+        ctx.fillStyle=night?'rgba(92,100,140,.30)':'rgba(198,154,189,.23)';
         ctx.beginPath();ctx.ellipse(cx,cy,r*1.3,r*.75,.13,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle=night?'rgba(91,191,160,.22)':'rgba(229,185,225,.30)';
+        ctx.fillStyle=night?'rgba(91,191,160,.18)':'rgba(247,215,235,.35)';
         ctx.beginPath();ctx.ellipse(cx+r*.3,cy-r*.15,r*.57,r*.31,.1,0,Math.PI*2);ctx.fill();
       }
     }
   }
 }
 function drawFourBiomeDetails(b,night){
-  // 遠景逐級降低紋理密度，保持五倍縮遠時平板的繪製負擔可控。
-  const step=240*Math.max(1,Math.ceil(.30/state.cam.zoom));
+  // 位置與密度完全固定在世界座標，縮放時不會重新抽樣或忽然消失。
+  const step=300;
   for(let x=Math.floor(b.minX/step)*step;x<b.maxX+step;x+=step){
     for(let y=Math.floor(b.minY/step)*step;y<b.maxY+step;y+=step){
       const seed=x*.0193+y*.0117;
@@ -3860,36 +3875,23 @@ function drawFourBiomeDetails(b,night){
       const biome=biomeAt(px,py).id;
       const s=Math.min(step*.30,110+step*.05);
       if(biome==='savanna'){
-        ctx.fillStyle=night?'rgba(131,136,91,.14)':'rgba(244,219,131,.32)';
+        ctx.fillStyle=night?'rgba(131,136,91,.12)':'rgba(245,233,173,.27)';
         ctx.beginPath();ctx.ellipse(px,py,s*1.25,s*.43,.17,0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle=night?'#899c6e':'rgba(99,123,59,.60)';ctx.lineWidth=Math.max(2,s*.055);
-        ctx.beginPath();ctx.moveTo(px-12,py+8);ctx.lineTo(px-16,py-14);
-        ctx.moveTo(px,py+8);ctx.lineTo(px+2,py-20);
-        ctx.moveTo(px+10,py+8);ctx.lineTo(px+21,py-8);ctx.stroke();
       }else if(biome==='lava'){
-        ctx.fillStyle=night?'rgba(5,4,19,.25)':'rgba(31,19,29,.25)';
+        ctx.fillStyle=night?'rgba(86,54,78,.20)':'rgba(178,111,136,.25)';
         ctx.beginPath();ctx.ellipse(px,py,s*1.1,s*.55,-.2,0,Math.PI*2);ctx.fill();
         if(forestHash(seed+23)>.35){
           ctx.beginPath();ctx.moveTo(px-s*.8,py+s*.22);
           ctx.lineTo(px-s*.12,py-s*.14);ctx.lineTo(px+s*.42,py+s*.24);
-          ctx.strokeStyle=night?'#ef592c':'#e84a25';ctx.lineWidth=Math.max(3,s*.10);ctx.stroke();
-          ctx.strokeStyle='#ffbe56';ctx.lineWidth=Math.max(1.5,s*.034);ctx.stroke();
+          ctx.strokeStyle=night?'#f4a085':'#efa08a';ctx.lineWidth=Math.max(3,s*.10);ctx.stroke();
+          ctx.strokeStyle='#ffe4b4';ctx.lineWidth=Math.max(1.5,s*.034);ctx.stroke();
         }
       }else if(biome==='snow'){
         ctx.fillStyle=night?'rgba(218,239,255,.15)':'rgba(255,255,255,.55)';
         ctx.beginPath();ctx.ellipse(px,py,s*1.5,s*.55,.2,0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle=night?'rgba(168,214,255,.45)':'rgba(96,164,199,.43)';
-        ctx.lineWidth=Math.max(1.2,s*.035);ctx.beginPath();
-        ctx.moveTo(px-s*.32,py);ctx.lineTo(px+s*.33,py);
-        ctx.moveTo(px,py-s*.34);ctx.lineTo(px,py+s*.32);ctx.stroke();
       }else{
-        ctx.fillStyle=night?'rgba(151,102,194,.25)':'rgba(196,146,205,.27)';
+        ctx.fillStyle=night?'rgba(151,102,194,.15)':'rgba(230,183,212,.18)';
         ctx.beginPath();ctx.ellipse(px,py,s*1.3,s*.57,-.1,0,Math.PI*2);ctx.fill();
-        for(let k=0;k<5;k++){
-          const a=k*Math.PI*2/5+seed;
-          ctx.fillStyle=k%2?'#eea9c9':'#f5d581';ctx.beginPath();
-          ctx.arc(px+Math.cos(a)*s*.62,py+Math.sin(a)*s*.26,Math.max(2,s*.14),0,Math.PI*2);ctx.fill();
-        }
       }
     }
   }
@@ -4084,12 +4086,156 @@ function drawWorld3DBiomeProp(x,y,kind,scale,night,now,seed){
       ['#e9b34c','#f7c561','#ffdb75','#eab84c','#ffe48a'],1);
   }
 }
+/* 柔和玩具／黏土美術：3D 世界中心與半徑以世界單位保存，
+   固定鏡頭投影後再做圓滑漸層、高光與柔邊。縮放只作用於鏡頭。 */
+function drawClayEllipsoid3D(x,y,z,rx,ry,rz,light,base,shade){
+  const p=projectWorld3D(x,y,z),zoom=state.cam.zoom;
+  const sx=Math.max(.5,zoom*Math.hypot(CAMERA_25D_COS*rx,CAMERA_25D_SIN*ry));
+  const sy=Math.max(.5,zoom*Math.hypot(CAMERA_25D_PITCH*CAMERA_25D_SIN*rx,
+    CAMERA_25D_PITCH*CAMERA_25D_COS*ry,CAMERA_3D_HEIGHT_FACTOR*rz));
+  const glow=ctx.createRadialGradient(p.x-sx*.35,p.y-sy*.45,0,
+    p.x+sx*.14,p.y+sy*.15,Math.max(sx,sy)*1.30);
+  glow.addColorStop(0,light);glow.addColorStop(.48,base);glow.addColorStop(1,shade);
+  ctx.fillStyle=glow;ctx.beginPath();ctx.ellipse(p.x,p.y,sx,sy,-.07,0,Math.PI*2);ctx.fill();
+  ctx.save();ctx.globalAlpha=.22;ctx.fillStyle=light;
+  ctx.beginPath();ctx.ellipse(p.x-sx*.26,p.y-sy*.35,sx*.40,sy*.19,-.26,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+function drawClayTree(x,y,s,night,seed){
+  drawWorld3DRound(x,y,0,8*s,8*s,82*s,
+    night?['#987c7c','#af8e7c','#c49b88','#997d70','#d4ad94']:
+      ['#c38e79','#e1aa88','#b98070','#ddaa84','#f4c7a1']);
+  const green=night?['#9eb6a4','#779f8d','#547c78']:['#f1efb5','#bcd68f','#89b59a'];
+  for(const [dx,dy,dz,rx,ry,rz] of [
+    [-27,5,95,34,29,29],[18,-13,105,35,30,33],
+    [-2,14,116,39,29,27],[32,14,91,27,24,22]]){
+    drawClayEllipsoid3D(x+dx*s,y+dy*s,dz*s,rx*s,ry*s,rz*s,...green);
+  }
+  for(let i=0;i<3;i++){
+    const a=seed*.3+i*2.1;
+    drawClayEllipsoid3D(x+Math.cos(a)*32*s,y+Math.sin(a)*17*s,116*s,
+      4*s,4*s,5*s,night?'#b4c9b0':'#f6e9ad',green[1],green[2]);
+  }
+}
+function drawClayFlower(x,y,s,night,seed){
+  drawWorld3DRound(x,y,0,3.5*s,3.5*s,76*s,
+    night?['#578a78','#6c9c80','#4b7c73','#7eaf91']:
+      ['#67aa83','#8ac79c','#4c9d84','#a0d8aa']);
+  const pink=seed%2>.85?
+    ['#fff7e4','#e8cbef','#bd97d7']:
+    ['#fff3df','#f3b4d4','#d887ad'];
+  for(let i=0;i<7;i++){
+    const a=i*Math.PI*2/7+seed*.08;
+    drawClayEllipsoid3D(x+Math.cos(a)*18*s,y+Math.sin(a)*18*s,78*s,
+      13*s,12*s,9*s,...pink);
+  }
+  drawClayEllipsoid3D(x,y,81*s,12*s,12*s,8*s,
+    night?'#ffdf9a':'#fff9c2','#f9cd80','#e5a96c');
+  drawClayEllipsoid3D(x-13*s,y+1*s,35*s,14*s,8*s,5*s,
+    '#cbebbd','#81b992','#519b82');
+}
+function drawClayBush(x,y,s,night,seed){
+  const green=night?['#9cb1ad','#7d9a97','#5e7c7b']:
+    ['#f4edbf','#afd5a0','#7caf9c'];
+  for(const [dx,dy,dz,r] of [
+    [-20,1,22,24],[17,-5,22,25],[0,10,33,30],[-5,-11,35,23]]){
+    drawClayEllipsoid3D(x+dx*s,y+dy*s,dz*s,r*s,r*.87*s,r*.86*s,...green);
+  }
+  if(forestHash(seed+12)>.5)for(let i=0;i<3;i++){
+    const a=i*2.3+seed;
+    drawClayEllipsoid3D(x+Math.cos(a)*19*s,y+Math.sin(a)*14*s,53*s,
+      5*s,5*s,5*s,'#fff1dc','#efa9bd','#d18fb0');
+  }
+}
+function drawClayBiomeProp(x,y,kind,scale,night,now,seed){
+  const s=scale,p=projectWorld3D(x,y,0),q=state.cam.zoom;
+  const shadow=ctx.createRadialGradient(p.x+8*q*s,p.y+7*q*s,2,
+    p.x+8*q*s,p.y+7*q*s,52*q*s);
+  shadow.addColorStop(0,'rgba(80,64,70,.23)');shadow.addColorStop(1,'rgba(80,64,70,0)');
+  ctx.fillStyle=shadow;ctx.beginPath();
+  ctx.ellipse(p.x+8*q*s,p.y+7*q*s,56*q*s,20*q*s,-.18,0,Math.PI*2);ctx.fill();
+  if(kind==='acacia'){
+    drawClayTree(x,y,s,night,seed);
+  }else if(kind==='savannaRock'){
+    drawClayEllipsoid3D(x,y,18*s,29*s,22*s,25*s,
+      '#fff4df','#debda9','#b78f87');
+    drawClayEllipsoid3D(x-19*s,y+10*s,8*s,12*s,11*s,10*s,
+      '#f9e9d6','#c8b79d','#a8978a');
+  }else if(kind==='shrub'||kind==='snowPuff'){
+    drawClayBush(x,y,s,night,seed);
+    if(kind==='snowPuff')drawClayEllipsoid3D(x,y,50*s,22*s,19*s,12*s,
+      '#ffffff','#e4f5f8','#b5d7e1');
+  }else if(kind==='volcano'){
+    drawWorld3DRound(x,y,0,83*s,78*s,116*s,
+      night?['#967184','#ac788b','#b98796','#866c85','#d7a1a8']:
+        ['#bc7a81','#d89594','#ebb0a6','#bd8390','#f8c3ae'],.27);
+    // 軟糖般的橘色岩漿，沿真實 3D 山坡下降。
+    drawWorld3DFaces([{points:[
+      {x:x+18*s,y:y+12*s,z:105*s},
+      {x:x+35*s,y:y+40*s,z:45*s},
+      {x:x+48*s,y:y+42*s,z:16*s},
+      {x:x+32*s,y:y+30*s,z:52*s}],color:night?'#e88f83':'#ff9b75'}]);
+    for(let i=0;i<10;i++){
+      const a=i*Math.PI*2/10,px=x+Math.cos(a)*22*s,py=y+Math.sin(a)*20*s;
+      drawClayEllipsoid3D(px,py,(110+(i%3)*-6)*s,15*s,13*s,(12+i%3*3)*s,
+        '#fffef6','#ffe7e6','#eec5d2');
+    }
+    drawClayEllipsoid3D(x,y,119*s,27*s,24*s,18*s,
+      '#ffffff','#ffe5ec','#e9bed1');
+    for(let i=0;i<3;i++){
+      const k=i*17+Math.sin(now*.0005+i)*4;
+      drawClayEllipsoid3D(x+(i%2?12:-10)*s,y,(157+k)*s,
+        (16+i*4)*s,(14+i*4)*s,(17+i*3)*s,
+        '#fff5fb','#f9d3e4','#e7b6d3');
+    }
+  }else if(kind==='lavaVent'){
+    drawWorld3DRound(x,y,0,35*s,34*s,23*s,
+      ['#bf7e8a','#d7969b','#efb1a5','#a9798c','#ffb57c'],.65);
+    drawClayEllipsoid3D(x,y,23*s,20*s,18*s,8*s,
+      '#fff0ac','#ffb280','#f28776');
+  }else if(kind==='snowPine'){
+    drawWorld3DRound(x,y,0,6*s,6*s,44*s,
+      ['#b89082','#d6ae96','#bf9985','#e5c3a3']);
+    drawWorld3DRound(x,y,12*s,49*s,47*s,65*s,
+      ['#79a99e','#9dc7b3','#abd4c0','#86b4aa','#c8e1c5'],.18);
+    drawWorld3DRound(x,y,62*s,36*s,35*s,58*s,
+      ['#89b4ad','#b2d7c2','#9fcdb9','#80b1aa','#d5e8d3'],.12);
+    drawClayEllipsoid3D(x,y,122*s,9*s,9*s,10*s,
+      '#ffffff','#f6ffff','#c9e5e9');
+  }else if(kind==='iceCrystal'){
+    const base=[{x:x-26*s,y,z:0},{x,y:y-24*s,z:0},
+      {x:x+26*s,y,z:0},{x,y:y+24*s,z:0}],tip={x,y,z:105*s};
+    drawWorld3DFaces(base.map((v,i)=>({points:[v,base[(i+1)%4],tip],
+      color:['#b8eaf1','#f7ffff','#8bd0dd','#d4f7fd'][i]})));
+    drawClayEllipsoid3D(x,y,103*s,5*s,5*s,9*s,
+      '#ffffff','#e9faff','#b7e0f3');
+  }else if(kind==='giantMushroom'){
+    drawWorld3DRound(x,y,0,13*s,13*s,79*s,
+      ['#e9d6bf','#fff5df','#d8c4b3','#ffe9d2','#fff6ed'],.85);
+    drawWorld3DRound(x,y,76*s,55*s,54*s,24*s,
+      ['#d383b1','#e6a0cd','#f3bbdc','#d78abb','#f5c7e3'],.90);
+    drawClayEllipsoid3D(x,y,101*s,56*s,51*s,25*s,
+      '#fff2f9','#efafd5','#c77fac');
+    for(let i=0;i<7;i++){
+      const a=i*Math.PI*2/7+seed;
+      drawClayEllipsoid3D(x+Math.cos(a)*29*s,y+Math.sin(a)*25*s,124*s,
+        5*s,5*s,4*s,'#fffefa','#ffe5f1','#ebbcda');
+    }
+  }else if(kind==='flower'||kind==='bloom'){
+    drawClayFlower(x,y,(kind==='bloom'?1.2:1)*s,night,seed);
+  }else if(kind==='grassTuft'){
+    for(let i=0;i<4;i++){
+      const a=i*Math.PI*2/4+seed;
+      drawWorld3DPeak(x+Math.cos(a)*9*s,y+Math.sin(a)*8*s,0,
+        (10+i%2*2)*s,(26+i%3*7)*s,
+        ['#88bd97','#b5d6a1','#70ae92','#cce0b2']);
+    }
+  }
+}
 function drawFourBiomeProps(b,night,now){
   const ornaments=[];
   const z=state.cam.zoom;
-  if(z<.10)return; // 總覽時景物只有幾個像素，直接略過以節省大量繪圖。
-  const detailScale=Math.max(1,Math.ceil(.42/z));
-  const spacing=320*detailScale;
+  const spacing=350; // 每個模型擁有固定的世界間距，不依鏡頭倍率增減。
   for(let x=Math.floor(b.minX/spacing)*spacing;x<b.maxX+spacing;x+=spacing){
     for(let y=Math.floor(b.minY/spacing)*spacing;y<b.maxY+spacing;y+=spacing){
       const seed=x*.0239+y*.0371;
@@ -4100,14 +4246,32 @@ function drawFourBiomeProps(b,night,now){
          fy<FOUR_BIOME_MAP.minY+80||fy>FOUR_BIOME_MAP.maxY-80)continue;
       const biome=biomeAt(fx,fy).id;
       const variation=forestHash(seed+15);
-      const kind=biome==='savanna'?(variation>.28?'acacia':'savannaRock'):
-        biome==='lava'?(variation>.70?'volcano':'lavaVent'):
-        biome==='snow'?(variation>.33?'snowPine':'iceCrystal'):
-        (variation>.58?'giantMushroom':'flower');
+      const kind=biome==='savanna'?(variation>.47?'acacia':variation>.21?'shrub':'savannaRock'):
+        biome==='lava'?(variation>.76?'volcano':variation>.14?'lavaVent':'savannaRock'):
+        biome==='snow'?(variation>.39?'snowPine':variation>.17?'iceCrystal':'snowPuff'):
+        (variation>.62?'giantMushroom':variation>.21?'flower':'grassTuft');
       const d=projectViewDelta(fx-state.cam.x,fy-state.cam.y);
       const p={x:innerWidth/2+d.x*z,y:innerHeight/2+d.y*z};
       if(p.x<-150||p.x>innerWidth+150||p.y<-190||p.y>innerHeight+180)continue;
       ornaments.push({p,seed,kind,scale:1,x:fx,y:fy});
+    }
+  }
+  // 額外的 3D 小草與花苞也採固定的世界格點，取代貼在地上的平面花紋。
+  const microSpacing=235;
+  for(let x=Math.floor(b.minX/microSpacing)*microSpacing;x<b.maxX+microSpacing;x+=microSpacing){
+    for(let y=Math.floor(b.minY/microSpacing)*microSpacing;y<b.maxY+microSpacing;y+=microSpacing){
+      const seed=x*.0471+y*.0647+83;
+      if(forestHash(seed+3)<.51)continue;
+      const fx=x+(forestHash(seed+8)-.5)*110;
+      const fy=y+(forestHash(seed+19)-.5)*110;
+      if(fx<FOUR_BIOME_MAP.minX+80||fx>FOUR_BIOME_MAP.maxX-80||
+         fy<FOUR_BIOME_MAP.minY+80||fy>FOUR_BIOME_MAP.maxY-80)continue;
+      const biome=biomeAt(fx,fy).id;
+      if(biome!=='savanna'&&biome!=='mushroom')continue;
+      const p=projectWorld3D(fx,fy,0);
+      if(p.x<-80||p.x>innerWidth+80||p.y<-110||p.y>innerHeight+100)continue;
+      ornaments.push({p,seed,kind:biome==='mushroom'&&forestHash(seed+27)>.45?'bloom':'grassTuft',
+        scale:biome==='mushroom'?.52:.62,x:fx,y:fy});
     }
   }
   for(const [i,mark] of FOUR_BIOME_MAP.landmarks.entries()){
@@ -4119,7 +4283,7 @@ function drawFourBiomeProps(b,night,now){
   ornaments.sort((a,b)=>a.p.y-b.p.y);
   for(const {seed,kind,scale,x,y} of ornaments){
     const s=(.74+forestHash(seed+31)*.52)*scale;
-    drawWorld3DBiomeProp(x,y,kind,s,night,now,seed);
+    drawClayBiomeProp(x,y,kind,s,night,now,seed);
   }
 }
 function drawFourBiomeLabels(){
@@ -5023,13 +5187,16 @@ $('#rigSave').onclick=()=>{
 // 預設視野供管理員在系統中調整；未解鎖時只顯示，不允許變更。
 function syncDefaultZoomControls(){
  const input=$('#defaultZoomSetting'),label=$('#defaultZoomValue');
- input.value=String(defaultViewZoom);label.textContent=defaultViewZoom.toFixed(2)+' 倍';
+ const safeMinimum=Math.min(1.20,minimum25DZoom());
+ input.min=String(safeMinimum);
+ input.value=String(Math.max(defaultViewZoom,safeMinimum));
+ label.textContent=Math.max(defaultViewZoom,safeMinimum).toFixed(2)+' 倍';
  input.disabled=!hunterState.unlocked;
  input.title=hunterState.unlocked?'調整此裝置的預設視角':'請先在獵人管理員介面解鎖';
 }
 $('#defaultZoomSetting').addEventListener('input',e=>{
  if(!hunterState.unlocked){syncDefaultZoomControls();toast('請先解鎖管理員模式');return;}
- defaultViewZoom=clamp(Number(e.target.value),MIN_25D_ZOOM,1.20);
+ defaultViewZoom=clamp(Number(e.target.value),Math.min(1.20,minimum25DZoom()),1.20);
  localStorage.setItem(DEFAULT_ZOOM_STORE,String(defaultViewZoom));
  syncDefaultZoomControls();fit();
 });
@@ -5907,7 +6074,7 @@ world.addEventListener('pointermove',e=>{
     const a=[...touchPoints.values()];
     const sx=(a[0].x+a[1].x)/2,sy=(a[0].y+a[1].y)/2;
     const dist=Math.max(10,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y));
-    state.cam.zoom=clamp(pinch.zoom*dist/pinch.dist,Math.min(minimum25DZoom(),fullMapOverviewZoom()),2.6);
+    state.cam.zoom=clamp(pinch.zoom*dist/pinch.dist,minimum25DZoom(),2.6);
     const offset=unprojectViewDelta((sx-innerWidth/2)/state.cam.zoom,
                                      (sy-innerHeight/2)/state.cam.zoom);
     state.cam.x=pinch.anchor.x-offset.x;
