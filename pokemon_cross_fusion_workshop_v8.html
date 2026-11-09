@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#f6edf5">
+<title>寶可夢自由拼裝工坊 V8</title>
+<style>
+:root{--ink:#403746;--muted:#897b8c;--line:#eadfea;--plum:#70557a;--paper:#fffdf5}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:var(--ink);background:#f4ebf4}
+#stage{position:fixed;inset:0;touch-action:none}canvas{display:block;width:100%;height:100%;touch-action:none}
+.top{position:fixed;z-index:4;top:calc(env(safe-area-inset-top) + 8px);left:9px;right:9px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.brand,.topRight{pointer-events:auto}.brand{display:flex;align-items:center;gap:7px;background:#fffdf2ed;border:1px solid white;border-radius:13px;padding:6px 9px;box-shadow:0 4px 16px #59445f1c}
+.logo{width:28px;height:28px;border-radius:9px;background:#ead9ef;display:grid;place-items:center;font-size:16px}.brand b{display:block;font-size:11px}.brand small{font-size:8px;color:var(--muted)}
+.topRight{display:flex;gap:5px}.topRight button{border:1px solid white;border-radius:11px;background:#fffdf2ed;padding:8px 10px;font-size:10px;font-weight:800;color:var(--ink);box-shadow:0 4px 16px #59445f1c}
+#hint{position:fixed;z-index:2;top:58px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#fffdf0df;border:1px solid white;border-radius:99px;padding:6px 9px;font-size:9px;color:#786b7b;pointer-events:none}
+#toast{position:fixed;z-index:10;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));transform:translate(-50%,8px);opacity:0;background:#55445b;color:white;padding:8px 12px;border-radius:99px;font-size:10px;white-space:nowrap;transition:.18s;pointer-events:none}#toast.show{opacity:1;transform:translate(-50%,0)}
+#bottomBar{position:fixed;z-index:5;left:7px;right:7px;bottom:calc(7px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:4px;padding:6px;background:#fffdf4ed;border:1px solid white;border-radius:17px;box-shadow:0 7px 22px #59445f24;backdrop-filter:blur(10px)}
+.cat{width:clamp(38px,10.7vw,51px);height:47px;border:1px solid #eee3ef;border-radius:11px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#65566c;padding:2px;flex:none}
+.cat .ico{font-size:18px;line-height:19px}.cat small{font-size:8px;font-weight:800}.cat.active{background:#73577d;color:white;border-color:#73577d}
+#shelf{position:fixed;z-index:7;left:7px;top:65px;bottom:calc(69px + env(safe-area-inset-bottom));width:min(190px,52vw);display:none;flex-direction:column;background:#fffdf6f5;border:1px solid white;border-radius:16px;padding:8px;box-shadow:0 8px 25px #59445f2b;backdrop-filter:blur(12px)}
+#shelf.open{display:flex}
+.shelfHead{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:6px}.shelfHead b{font-size:10px}.shelfHead button{border:0;border-radius:8px;background:#f1e8f2;padding:5px 8px;font-size:11px;color:#6e5875}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px}.tab{border:1px solid #eadfea;background:white;border-radius:9px;padding:7px 3px;font-size:9px;font-weight:800;color:#6a5a70}.tab.active{background:#73577d;color:white;border-color:#73577d}
+#splitPane,#wholePane{display:none;flex:1;min-height:0;flex-direction:column}#splitPane.active,#wholePane.active{display:flex}
+.subnote{font-size:8px;color:var(--muted);line-height:1.4;margin:0 0 6px}
+ .extractBtn{border:0;border-radius:10px;background:#73577d;color:white;padding:9px 8px;font-size:9px;font-weight:800;margin:2px 0 6px}.extractBtn:disabled{opacity:.42}
+.extractStatus{font-size:8px;color:var(--muted);margin:0 0 6px;line-height:1.35}
+#partChoices,#wholeList,#splitCatalog{overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:5px;align-content:start;scrollbar-width:thin;padding-bottom:4px}
+.choice{border:1px solid #eee5ef;border-radius:10px;background:#fff;padding:4px;min-width:0;text-align:left;color:#514554;display:flex;flex-direction:column;gap:3px}
+.choice .preview{height:58px;border-radius:7px;background:linear-gradient(145deg,#faf4fa,#f0e6f2);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.choice .preview canvas{width:100%;height:100%;display:block;touch-action:none}.choice .preview model-viewer{width:100%;height:100%;display:block;background:transparent;pointer-events:none;--poster-color:transparent}.choice .preview{height:82px}.modelChoice{min-height:122px}.modelChoice .modelAction{font-size:7px;color:#8a718e;font-weight:800}.libraryBack{border:0;border-radius:9px;background:#f0e6f1;color:#68546f;padding:7px 8px;font-size:9px;font-weight:800;margin-bottom:6px;text-align:left}.catalogStatus{font-size:8px;color:var(--muted);padding:5px 2px;line-height:1.4}#partLibrary{display:flex;flex-direction:column;min-height:0;flex:1}#partLibrary[hidden],#splitCatalog[hidden]{display:none!important}
+.choice b{font-size:8px;line-height:1.2}.choice small{font-size:7px;color:var(--muted)}
+#wholeSearch{width:100%;border:1px solid #eadfea;border-radius:9px;padding:8px 7px;font-size:10px;background:white;margin-bottom:6px;outline:none;user-select:text;-webkit-user-select:text}
+#wholeList .wholeChoice{min-height:66px;justify-content:center}.wholeChoice .dex{font-size:8px;color:var(--muted)}
+#selectionHint{position:fixed;z-index:5;right:8px;bottom:calc(68px + env(safe-area-inset-bottom));max-width:55%;display:none;background:#fffdf2ed;border:1px solid white;border-radius:11px;padding:7px 9px;font-size:9px;color:#5d4d63;box-shadow:0 4px 12px #59445f18;text-align:right}
+#selectionHint.show{display:block}
+#albumModal{position:fixed;z-index:12;inset:0;background:#40334480;display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(5px)}
+#albumModal.show{display:flex}.albumCard{width:min(390px,100%);max-height:80dvh;overflow:auto;background:#fffaf1;border:2px solid white;border-radius:22px;padding:14px;box-shadow:0 18px 55px #30203555}
+.albumHead{display:flex;align-items:center;justify-content:space-between}.albumHead h2{font-size:15px;margin:0}.albumHead button{border:0;background:#f0e6f1;border-radius:9px;padding:7px 10px}
+#albumItems{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}.albumItem{background:#fff;border:1px solid #eadfea;border-radius:13px;padding:9px;min-height:75px}.albumItem b{font-size:10px;display:block}.albumItem small{font-size:8px;color:var(--muted)}.albumActions button{width:100%;border:0;border-radius:11px;padding:10px;background:#73577d;color:white;font-size:10px;font-weight:800;margin-top:10px}
+.empty{grid-column:1/-1;padding:20px 8px;text-align:center;color:var(--muted);font-size:10px}
+@media(min-width:760px){#bottomBar{left:50%;right:auto;transform:translateX(-50%);gap:7px}.cat{width:57px;height:54px}.cat .ico{font-size:21px}#shelf{width:220px;top:70px;bottom:80px}#hint{top:65px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+</head>
+<body>
+<div id="stage"></div>
+<div class="top">
+ <div class="brand"><div class="logo">🧬</div><div><b>寶可夢自由拼裝工坊</b><small>V8 · REAL MODEL LIBRARY</small></div></div>
+ <div class="topRight"><button id="albumBtn">🃏 圖冊</button><button id="resetBtn">清空</button></div>
+</div>
+<div id="hint">點選零件・長按移動・空白處單指旋轉視角／雙指捏合遠近</div>
+<aside id="shelf">
+ <div class="shelfHead"><b id="shelfTitle">選擇頭部</b><button id="closeShelf">✕</button></div>
+ <div class="tabs"><button class="tab active" data-pane="split">可拆解寶可夢</button><button class="tab" data-pane="whole">完整模型</button></div>
+ <section id="splitPane" class="active">
+  <p class="subnote">真實 3D 模型預覽。點選寶可夢後自動下載 GLB、檢查獨立網格並加入拆解零件庫。</p>
+  <input id="splitSearch" type="search" placeholder="搜尋寶可夢英文名稱或圖鑑編號">
+  <div id="splitCatalog"><div class="catalogStatus">正在下載寶可夢素材清單…</div></div>
+  <div id="partLibrary" hidden>
+   <button id="backToCatalog" class="libraryBack">← 返回寶可夢清單</button>
+   <div id="extractStatus" class="extractStatus">選擇已提取的真實零件</div>
+   <div id="partChoices"><div class="empty">尚未提取任何真實網格。</div></div>
+  </div>
+ </section>
+ <section id="wholePane">
+  <p class="subnote">下載並加入完整 GLB，不拆解。可整隻移動、旋轉及縮放。</p>
+  <input id="wholeSearch" type="search" placeholder="搜尋寶可夢英文名稱或圖鑑編號">
+  <div id="wholeList"><div class="catalogStatus">正在下載寶可夢素材清單…</div></div>
+ </section>
+</aside>
+<div id="selectionHint">已選取零件：<b id="selectedLabel">—</b><br>長按拖動・雙指扭轉旋轉／捏合縮放</div>
+<div id="bottomBar">
+ <button class="cat" data-part="head"><span class="ico">🙂</span><small>頭部</small></button>
+ <button class="cat" data-part="torso"><span class="ico">🧍</span><small>身體</small></button>
+ <button class="cat" data-part="left_arm"><span class="ico">💪</span><small>左手</small></button>
+ <button class="cat" data-part="right_arm"><span class="ico">💪</span><small>右手</small></button>
+ <button class="cat" data-part="left_leg"><span class="ico">🦶</span><small>左腳</small></button>
+ <button class="cat" data-part="right_leg"><span class="ico">🦶</span><small>右腳</small></button>
+ <button class="cat" data-part="tail"><span class="ico">〰️</span><small>尾巴</small></button>
+</div>
+<div id="toast"></div>
+<div id="albumModal"><div class="albumCard"><div class="albumHead"><h2>🃏 我的卡牌圖冊</h2><button id="closeAlbum">關閉</button></div><div id="albumItems"></div><div class="albumActions"><button id="saveCard">收藏目前作品</button></div></div></div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {OutlinePass} from 'three/addons/postprocessing/OutlinePass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
+
+const stage=document.querySelector('#stage'),scene=new THREE.Scene();scene.background=new THREE.Color(0xf5edf5);
+const camera=new THREE.PerspectiveCamera(36,innerWidth/innerHeight,.1,200);camera.position.set(0,2.7,9.8);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;stage.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,1.4,0);controls.enableDamping=true;controls.dampingFactor=.075;controls.enablePan=false;controls.enableZoom=false;controls.minDistance=5;controls.maxDistance=18;controls.maxPolarAngle=Math.PI*.49;
+scene.add(new THREE.HemisphereLight(0xffffff,0x8e7c93,2));
+const key=new THREE.DirectionalLight(0xffffff,2.0);key.position.set(-4,8,7);scene.add(key);const fill=new THREE.DirectionalLight(0xe5c9f0,1.1);fill.position.set(5,4,-5);scene.add(fill);
+const floor=new THREE.Mesh(new THREE.CircleGeometry(10,64),new THREE.MeshStandardMaterial({color:0xfff8ef,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.8;scene.add(floor);
+const platform=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.3,.15,64),new THREE.MeshStandardMaterial({color:0xe7d5e9,roughness:.72}));platform.position.y=-1.7;scene.add(platform);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(2.17,.035,10,64),new THREE.MeshStandardMaterial({color:0xc69ecb}));ring.rotation.x=Math.PI/2;ring.position.y=-1.61;scene.add(ring);
+const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));const outline=new OutlinePass(new THREE.Vector2(innerWidth,innerHeight),scene,camera);outline.edgeStrength=5.2;outline.edgeGlow=.9;outline.edgeThickness=2.1;outline.pulsePeriod=0;outline.visibleEdgeColor.set('#ff1744');outline.hiddenEdgeColor.set('#ff1744');composer.addPass(outline);composer.addPass(new OutputPass());
+
+const draco=new DRACOLoader();draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');const gltfLoader=new GLTFLoader();gltfLoader.setDRACOLoader(draco);
+const labels={head:'頭部',torso:'身體',left_arm:'左手臂',right_arm:'右手臂',left_leg:'左腳',right_leg:'右腳',tail:'尾巴'};
+let activePart='head',selected=null,objects=[],modelCatalog=[],catalogReady=false,extractedParts=[],splitLibraryMode='catalog';
+const shelf=document.querySelector('#shelf'),partChoices=document.querySelector('#partChoices');
+let shelfCameraShift=null;
+const shelfZoomFactor=1.2;
+function openShelf(){
+ if(shelf.classList.contains('open'))return;
+ shelf.classList.add('open');
+ // Shift the camera framing away from the left drawer and gently zoom out.
+ // This keeps the active Pokémon visible in the uncovered right-hand viewport.
+ camera.updateMatrixWorld(true);
+ const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0).normalize();
+ const menuWidth=shelf.getBoundingClientRect().width||Math.min(190,innerWidth*.52);
+ const distance=camera.position.distanceTo(controls.target);
+ const visibleWidth=2*distance*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect;
+ const shiftAmount=visibleWidth*(menuWidth/innerWidth)*.52;
+ shelfCameraShift=right.multiplyScalar(-shiftAmount);
+ camera.position.add(shelfCameraShift);
+ controls.target.add(shelfCameraShift);
+ camera.position.sub(controls.target).multiplyScalar(shelfZoomFactor).add(controls.target);
+ controls.update();
+}
+function closeShelf(){
+ if(!shelf.classList.contains('open'))return;
+ shelf.classList.remove('open');
+ if(shelfCameraShift){
+  camera.position.sub(shelfCameraShift);
+  controls.target.sub(shelfCameraShift);
+  camera.position.sub(controls.target).multiplyScalar(1/shelfZoomFactor).add(controls.target);
+  shelfCameraShift=null;
+  controls.update();
+ }
+}
+
+function toast(t){const e=document.querySelector('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),1450)}
+function classifyMeshName(name){
+ const n=(name||'').toLowerCase();
+ if(/head|face|ear|horn|嘴|頭|臉/.test(n))return 'head';
+ if(/body|torso|chest|腹|身體|軀幹/.test(n))return 'torso';
+ if(/arm|hand|wing|fin|手臂|手掌|翅/.test(n))return 'left_arm';
+ if(/leg|foot|feet|paw|腳|腿/.test(n))return 'left_leg';
+ if(/tail|尾/.test(n))return 'tail';
+ return 'other';
+}
+function drawMeshPreview(canvas,template){
+ const w=144,h=100,previewScene=new THREE.Scene();previewScene.background=new THREE.Color(0xf5edf5);
+ previewScene.add(new THREE.HemisphereLight(0xffffff,0x9b899e,2));
+ const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(-3,4,5);previewScene.add(light);
+ const mesh=template.clone(false);mesh.position.set(0,0,0);previewScene.add(mesh);mesh.updateMatrixWorld(true);
+ const bounds=new THREE.Box3().setFromObject(mesh),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+ mesh.position.sub(center);mesh.updateMatrixWorld(true);
+ const maxDim=Math.max(size.x,size.y,size.z,.2),cam=new THREE.PerspectiveCamera(35,w/h,.01,100);
+ cam.position.set(0,0,maxDim*2.7);cam.lookAt(0,0,0);
+ const target=new THREE.WebGLRenderTarget(w,h,{depthBuffer:true});
+ const oldTarget=renderer.getRenderTarget(),oldColor=renderer.getClearColor(new THREE.Color()),oldAlpha=renderer.getClearAlpha();
+ renderer.setRenderTarget(target);renderer.setClearColor(0xf5edf5,1);renderer.clear();renderer.render(previewScene,cam);
+ const pixels=new Uint8Array(w*h*4);renderer.readRenderTargetPixels(target,0,0,w,h,pixels);
+ renderer.setRenderTarget(oldTarget);renderer.setClearColor(oldColor,oldAlpha);target.dispose();
+ const ctx=canvas.getContext('2d'),img=ctx.createImageData(w,h);
+ for(let y=0;y<h;y++)img.data.set(pixels.subarray((h-1-y)*w*4,(h-y)*w*4),y*w*4);
+ canvas.width=w;canvas.height=h;ctx.putImageData(img,0,0);
+}
+function renderParts(){
+ const box=document.querySelector('#partChoices');box.innerHTML='';
+ let matches=extractedParts.filter(p=>activePart==='head'||activePart==='torso'||activePart==='tail'
+   ? p.category===activePart
+   : activePart.includes('arm') ? p.category==='left_arm'
+   : activePart.includes('leg') ? p.category==='left_leg'
+   : true);
+ const fallbackToAll=matches.length===0;
+ if(fallbackToAll)matches=extractedParts;
+ if(!matches.length){box.innerHTML='<div class="empty">目前沒有可用的獨立網格。請返回寶可夢清單，選擇另一隻模型。</div>';return;}
+ matches.forEach(part=>{
+  const b=document.createElement('button');b.className='choice';b.innerHTML=`<div class="preview"><canvas aria-label="${escapeHtml(part.label)} 的真實 3D 網格預覽"></canvas></div><b>${escapeHtml(part.label)}</b><small>${part.category==='other'?'未分類網格':labels[part.category]||part.category} · ${escapeHtml(part.sourceName)}</small>`;
+  b.onclick=()=>addExtractedPart(part);box.append(b);drawMeshPreview(b.querySelector('canvas'),part.template);
+ });
+ if(fallbackToAll){const note=document.createElement('div');note.className='catalogStatus';note.textContent='這隻模型沒有可辨識的部位命名，先顯示全部獨立網格供你挑選。';box.prepend(note);}
+}
+function addExtractedPart(part){
+ const obj=part.template.clone(true);obj.position.set(-1.7+(objects.length%3)*.28,.1+Math.floor(objects.length/3)*.24,.25);obj.rotation.set(0,0,0);
+ obj.userData.kind='extracted';obj.userData.label=part.label;obj.userData.partCategory=part.category;
+ scene.add(obj);objects.push(obj);select(obj);closeShelf();updateHint();toast(part.label+'已加入工作區');
+}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function extractSelectedModel(auto=false){
+ if(!selected||selected.userData.kind!=='whole'){toast('請先載入一隻完整模型');return 0;}
+ const root=selected;root.updateMatrixWorld(true);let count=0,skipped=0;
+ root.traverse(node=>{
+  if(!node.isMesh)return;
+  if(node.isSkinnedMesh){skipped++;return;}
+  const template=node.clone(false);node.updateWorldMatrix(true,false);
+  node.matrixWorld.decompose(template.position,template.quaternion,template.scale);
+  template.geometry=node.geometry;template.material=node.material;
+  template.userData.kind='extractedTemplate';
+  const rawName=node.name&&node.name.trim()?node.name.trim():'Mesh '+(count+1);
+  const category=classifyMeshName(rawName);
+  extractedParts.push({template,label:rawName,category,sourceName:root.userData.label||'完整模型'});
+  count++;
+ });
+ if(count){
+  root.visible=false;
+  splitLibraryMode='parts';
+  document.querySelector('#splitCatalog').hidden=true;
+  document.querySelector('#partLibrary').hidden=false;
+  document.querySelector('#extractStatus').textContent=`${root.userData.label}：已提取 ${count} 個獨立網格${skipped?`，略過 ${skipped} 個骨架網格`:''}`;
+  renderParts();
+  toast('已下載並提取 '+count+' 個真實網格');
+ }else{
+  document.querySelector('#extractStatus').textContent='這隻模型沒有可直接分離的靜態網格'+(skipped?'（含骨架網格）':'')+'，保留完整模型供遊玩。';
+  root.visible=true;
+  splitLibraryMode='catalog';
+  document.querySelector('#splitCatalog').hidden=false;
+  document.querySelector('#partLibrary').hidden=true;
+  toast('這隻模型目前無法自動拆件，請試試其他寶可夢');
+ }
+ return count;
+}
+function setSplitLibraryMode(mode){
+ splitLibraryMode=mode;
+ document.querySelector('#splitCatalog').hidden=mode!=='catalog';
+ document.querySelector('#partLibrary').hidden=mode!=='parts';
+ if(mode==='parts')renderParts();
+}
+function addWholeModel(url,name,autoSplit=false){
+ toast('正在下載 '+name+' 的真實 3D 模型…');
+ gltfLoader.load(url,gltf=>{
+  const model=new THREE.Group();model.add(gltf.scene);normalizeModel(model);model.userData.kind='whole';model.userData.label=name+'（完整模型）';
+  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+  model.position.set(0,0,0);scene.add(model);objects.push(model);select(model);updateHint();
+  if(autoSplit){
+   const n=extractSelectedModel(true);
+   if(n>0){document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.pane==='split'));document.querySelector('#splitPane').classList.add('active');document.querySelector('#wholePane').classList.remove('active');}
+  }else{closeShelf();toast(name+'完整模型已加入工作區');}
+ },undefined,err=>{console.error(err);toast('模型下載失敗，請檢查網路或稍後再試');});
+}
+function renderCatalog(target){
+ const isSplit=target==='split';
+ const input=document.querySelector(isSplit?'#splitSearch':'#wholeSearch');
+ const list=document.querySelector(isSplit?'#splitCatalog':'#wholeList');
+ if(!list)return;
+ const q=(input?.value||'').trim().toLowerCase();
+ const arr=modelCatalog.filter(x=>x.name.toLowerCase().includes(q)||String(x.id).includes(q)).slice(0,60);
+ list.innerHTML='';
+ if(!arr.length){list.innerHTML='<div class="empty">找不到符合的寶可夢</div>';return;}
+ arr.forEach(p=>{
+  const b=document.createElement('button');b.className='choice modelChoice';
+  b.innerHTML=`<div class="preview"><model-viewer src="${escapeHtml(p.url)}" alt="${escapeHtml(p.name)} 3D model" loading="lazy" reveal="auto" camera-controls disable-zoom disable-pan interaction-prompt="none" shadow-intensity="0.55" exposure="1.1" camera-orbit="0deg 75deg 2.8m"></model-viewer></div><b>${escapeHtml(p.name)}</b><small class="dex">#${p.id} · ${escapeHtml(p.form||'regular')}</small><span class="modelAction">${isSplit?'點擊下載並自動拆解':'點擊下載完整模型'}</span>`;
+  b.addEventListener('click',()=>addWholeModel(p.url,p.name,isSplit));
+  list.append(b);
+ });
+}
+async function loadCatalog(){
+ if(catalogReady)return;catalogReady=true;
+ const splitList=document.querySelector('#splitCatalog'),wholeList=document.querySelector('#wholeList');
+ splitList.innerHTML='<div class="catalogStatus">正在連線並下載寶可夢素材清單…</div>';
+ wholeList.innerHTML='<div class="catalogStatus">正在連線並下載寶可夢素材清單…</div>';
+ try{
+  const res=await fetch('https://pokemon-3d-api.onrender.com/v1/pokemon');
+  if(!res.ok)throw new Error('API '+res.status);
+  const data=await res.json(),arr=data.pokemon||data;
+  modelCatalog=[];
+  for(const p of arr){
+   const forms=p.forms||[];
+   const f=forms.find(x=>(x.formName||'').toLowerCase()==='regular')||forms[0];
+   if(f?.model)modelCatalog.push({id:p.id,name:f.name||p.name||('Pokémon '+p.id),url:f.model,form:f.formName||'regular'});
+  }
+  modelCatalog.sort((a,b)=>Number(a.id)-Number(b.id));
+  renderCatalog('split');renderCatalog('whole');
+  document.querySelector('#hint').textContent=`已載入 ${modelCatalog.length} 隻寶可夢模型清單｜空白處雙指捏合可調遠近`;
+ }catch(e){
+  console.warn(e);
+  const msg='<div class="empty">寶可夢模型清單暫時無法連線。請確認網路後重新整理遊戲。</div>';
+  splitList.innerHTML=msg;wholeList.innerHTML=msg;
+  toast('模型清單下載失敗，請稍後重整');
+ }
+}
+document.querySelector('#splitSearch').addEventListener('input',()=>renderCatalog('split'));
+document.querySelector('#wholeSearch').addEventListener('input',()=>renderCatalog('whole'));
+document.querySelector('#backToCatalog').addEventListener('click',()=>setSplitLibraryMode('catalog'));
+document.querySelectorAll('.cat').forEach(b=>b.addEventListener('click',()=>{
+ activePart=b.dataset.part;document.querySelectorAll('.cat').forEach(x=>x.classList.toggle('active',x===b));
+ document.querySelector('#shelfTitle').textContent='選擇'+labels[activePart];openShelf();
+ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.pane==='split'));
+ document.querySelector('#splitPane').classList.add('active');document.querySelector('#wholePane').classList.remove('active');
+ setSplitLibraryMode(extractedParts.length?'parts':'catalog');
+}));
+document.querySelector('#closeShelf').onclick=()=>closeShelf();
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));
+ document.querySelector('#splitPane').classList.toggle('active',b.dataset.pane==='split');
+ document.querySelector('#wholePane').classList.toggle('active',b.dataset.pane==='whole');
+ if(b.dataset.pane==='whole')renderCatalog('whole');
+ if(b.dataset.pane==='split'){if(splitLibraryMode==='parts'&&extractedParts.length)renderParts();else renderCatalog('split');}
+});
+
+// Interaction model:
+// 1-finger blank drag = orbit camera; blank-space pinch = zoom camera.
+// Long press on a model = move; two fingers on the same selected model = rotate/scale that model.
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),dragPlane=new THREE.Plane(new THREE.Vector3(0,0,1),0),hit=new THREE.Vector3(),offset=new THREE.Vector3(),activePointers=new Map();
+let press=null,longTimer=null,isDraggingObject=false,gesture=null;
+function cast(ev){const r=renderer.domElement.getBoundingClientRect();pointer.x=(ev.clientX-r.left)/r.width*2-1;pointer.y=-((ev.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(pointer,camera);}
+function pickObject(ev){cast(ev);const meshes=[];objects.forEach(g=>g.traverse(o=>{if(o.isMesh)meshes.push(o)}));const hits=raycaster.intersectObjects(meshes,false);if(!hits.length)return null;let n=hits[0].object;while(n&&!objects.includes(n))n=n.parent;return n||null;}
+function pointOnPlane(ev){cast(ev);return raycaster.ray.intersectPlane(dragPlane,hit)?hit.clone():null;}
+function cameraZoomTo(distance){
+ const dir=camera.position.clone().sub(controls.target).normalize();
+ const d=THREE.MathUtils.clamp(distance,3.4,28);
+ camera.position.copy(controls.target).addScaledVector(dir,d);
+ controls.update();
+}
+function zoomCameraBy(factor){cameraZoomTo(camera.position.distanceTo(controls.target)*factor);}
+function beginTwoFinger(){
+ if(activePointers.size<2)return;
+ clearTimeout(longTimer);isDraggingObject=false;press=null;
+ const pts=[...activePointers.values()].slice(0,2);
+ const sameObject=!!selected&&pts.every(p=>p.obj===selected);
+ const blankSpace=pts.every(p=>!p.obj);
+ if(!sameObject&&!blankSpace){gesture=null;return;}
+ controls.enabled=false;
+ gesture={
+  target:sameObject?'object':'camera',
+  distance:Math.max(1,Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)),
+  angle:Math.atan2(pts[1].y-pts[0].y,pts[1].x-pts[0].x),
+  cameraDistance:camera.position.distanceTo(controls.target),
+  scale:selected?.scale.x||1,
+  rotation:selected?.rotation.z||0
+ };
+}
+renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+renderer.domElement.addEventListener('dblclick',e=>{e.preventDefault();e.stopPropagation();});
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();zoomCameraBy(e.deltaY>0?1.09:.92);},{passive:false});
+renderer.domElement.addEventListener('pointerdown',ev=>{
+ const obj=pickObject(ev);
+ activePointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY,obj});
+ if(obj){
+  select(obj);controls.enabled=false;press={obj,id:ev.pointerId,x:ev.clientX,y:ev.clientY};isDraggingObject=false;clearTimeout(longTimer);
+  longTimer=setTimeout(()=>{if(press&&activePointers.size===1){isDraggingObject=true;const p=pointOnPlane(ev);if(p)offset.copy(press.obj.position).sub(p);toast('拖動中：放開手指即可放置');}},360);
+ }else if(activePointers.size===1){
+  select(null);press=null;controls.enabled=true;
+ }
+ if(activePointers.size>=2)beginTwoFinger();
+});
+renderer.domElement.addEventListener('pointermove',ev=>{
+ if(activePointers.has(ev.pointerId)){
+  const old=activePointers.get(ev.pointerId);
+  activePointers.set(ev.pointerId,{...old,x:ev.clientX,y:ev.clientY});
+ }
+ if(activePointers.size>=2&&gesture){
+  const pts=[...activePointers.values()].slice(0,2);
+  const dist=Math.max(1,Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y));
+  if(gesture.target==='camera'){
+   cameraZoomTo(gesture.cameraDistance*gesture.distance/dist);
+  }else if(selected){
+   const ang=Math.atan2(pts[1].y-pts[0].y,pts[1].x-pts[0].x);
+   selected.scale.setScalar(THREE.MathUtils.clamp(gesture.scale*dist/gesture.distance,.25,4));
+   selected.rotation.z=gesture.rotation+(ang-gesture.angle);
+  }
+  return;
+ }
+ if(press&&press.id===ev.pointerId&&isDraggingObject){const p=pointOnPlane(ev);if(p)press.obj.position.copy(p.add(offset));}
+});
+function releasePointer(ev){
+ activePointers.delete(ev.pointerId);
+ if(activePointers.size<2)gesture=null;
+ if(press&&press.id===ev.pointerId){clearTimeout(longTimer);if(isDraggingObject)toast('已放置');press=null;isDraggingObject=false;}
+ if(activePointers.size===0){clearTimeout(longTimer);gesture=null;controls.enabled=true;}
+}
+renderer.domElement.addEventListener('pointerup',releasePointer);
+renderer.domElement.addEventListener('pointercancel',releasePointer);
+
+document.querySelector('#resetBtn').onclick=()=>{objects.forEach(o=>scene.remove(o));objects=[];extractedParts=[];splitLibraryMode='catalog';document.querySelector('#extractStatus').textContent='尚未提取任何真實模型零件';setSplitLibraryMode('catalog');select(null);closeShelf();updateHint();toast('工作區與已拆解零件清單已清空');};
+
+// Album stores current build metadata locally.
+const albumKey='pokemonFusionAlbumV8';function readAlbum(){try{return JSON.parse(localStorage.getItem(albumKey)||'[]')}catch{return[]}}
+function renderAlbum(){const arr=readAlbum(),box=document.querySelector('#albumItems');box.innerHTML='';if(!arr.length){box.innerHTML='<div class="empty">圖冊還沒有卡牌。先組裝作品再收藏。</div>';return;}arr.forEach(card=>{const d=document.createElement('div');d.className='albumItem';d.innerHTML=`<b>🌟 ${card.name}</b><small>${card.count} 個模型／零件 · ${new Date(card.date).toLocaleDateString()}</small>`;box.append(d);});}
+document.querySelector('#albumBtn').onclick=()=>{renderAlbum();document.querySelector('#albumModal').classList.add('show');};document.querySelector('#closeAlbum').onclick=()=>document.querySelector('#albumModal').classList.remove('show');
+document.querySelector('#saveCard').onclick=()=>{if(objects.length<1){toast('先加入模型或零件');return;}const a=readAlbum();a.unshift({name:'我的混合寶可夢 '+(a.length+1),count:objects.length,date:Date.now(),items:objects.map(o=>({label:o.userData.label,kind:o.userData.kind,position:o.position.toArray(),rotation:o.rotation.toArray(),scale:o.scale.toArray()}))});localStorage.setItem(albumKey,JSON.stringify(a));renderAlbum();toast('已收藏卡牌');};
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);outline.setSize(innerWidth,innerHeight);}
+addEventListener('resize',resize);function animate(){requestAnimationFrame(animate);controls.update();composer.render();}resize();renderParts();loadCatalog();animate();
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
