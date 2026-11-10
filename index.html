@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#f6edf5">
-<title>寶可夢自由拼裝工坊 V45</title>
+<title>寶可夢自由拼裝工坊 V50</title>
 <style>
 :root{--ink:#4c3e50;--muted:#8f7d91;--line:#eadceb;--plum:#77577e;--paper:#fffdf6;--pink:#fff1fb;--shadow:0 12px 35px #755c8250}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
@@ -144,7 +144,7 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 <body>
 <canvas id="gameCanvas" aria-label="3D DNA 融合模型。拖曳可旋轉視角，雙指縮放。"></canvas>
 <header class="top">
- <div class="brand"><div class="brandIcon">🧬</div><div><h1>寶可夢自由拼裝工坊</h1><small>V45 · DNA RECIPE WORKBENCH</small></div></div>
+ <div class="brand"><div class="brandIcon">🧬</div><div><h1>寶可夢自由拼裝工坊</h1><small>V50 · INTEGRATED ACCEPTANCE BUILD</small></div></div>
  <div class="topRight"><button class="statusBtn" id="fusionStatus" disabled>生成中</button><button id="albumBtn">🃏 圖冊</button><button id="gearBtn" aria-label="設定">⚙</button><button id="clearBtn">清空</button></div>
 </header>
 <div id="status" role="status">準備 3D 引擎…</div>
@@ -176,7 +176,7 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
  <div class="modalActions"><button id="saveCard">收藏這隻新模型</button><button class="secondary" onclick="document.getElementById('albumModal').classList.remove('show');document.getElementById('gearBtn').click()">匯出 GLB</button></div>
 </div></div>
 <script>
-/* V45 DNA recipe save/load, GLB export, and integrated pipeline. */
+/* V50 integrated DNA recipe, preview, GLB export and topology acceptance report. */
 const FusionCore = (() => {
  'use strict';
 
@@ -1876,7 +1876,318 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FusionCore;
   const el=document.getElementById(id);if(el&&!allowed.has(id))el.disabled=true;
  });
  const report=document.getElementById('dnaReport');
- if(report)report.textContent='V45 DNA recipe save/load, GLB export, and integrated pipeline.';
+ if(report)report.textContent='V50 integrated DNA recipe, preview, GLB export and topology acceptance report.';
+})();
+</script>
+
+<style>
+#v50Panel{position:fixed;z-index:55;left:50%;bottom:14px;transform:translateX(-50%);width:min(760px,calc(100vw - 20px));max-height:54dvh;overflow:auto;background:#fffdf7f4;border:2px solid #fff;border-radius:18px;box-shadow:0 14px 42px #21142b40;padding:12px;color:#514455;font:12px/1.45 system-ui;display:none}
+#v50Panel.open{display:block}
+#v50Panel h3{font-size:15px;margin:0;color:#77577e}
+#v50Panel .head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#v50Panel .actions{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0}
+#v50Panel button,#v50Panel label{border:0;border-radius:10px;padding:8px 11px;background:#77577e;color:#fff;font-weight:850;font-size:11px;cursor:pointer}
+#v50Panel button.alt,#v50Panel label{background:#f0e5f1;color:#77577e}
+#v50Panel button:disabled{opacity:.38;cursor:not-allowed}
+#v50Panel .status{background:#f8f1f8;border-radius:10px;padding:8px;margin:8px 0;color:#725e78;white-space:pre-wrap}
+#v50Panel .roles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#v50Panel .roles span{background:#f4edf5;border-radius:8px;padding:6px;overflow-wrap:anywhere}
+#v50Panel pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:130px;overflow:auto;background:#211a25;color:#f6edf7;border-radius:10px;padding:9px;font-size:10px}
+#v50Panel input[type=file]{display:none}
+#v50Launch{position:fixed;z-index:56;right:12px;bottom:12px;border:0;border-radius:13px;padding:10px 13px;background:#77577e;color:#fff;font-weight:900;box-shadow:0 8px 22px #24152d33}
+@media(max-width:520px){#v50Panel{bottom:62px;max-height:58dvh}.roles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<div id="v50Panel">
+ <div class="head"><h3>🧬 V46–V50 真實模型融合核心</h3><button class="alt" id="v50Close">收起</button></div>
+ <div class="status" id="v50Status">讀取來源選擇中…</div>
+ <div class="roles" id="v50RoleList"></div>
+ <div class="actions">
+  <button id="v46Analyze">V46 解剖分析</button>
+  <button id="v47Map" disabled>V47 骨架對齊</button>
+  <button id="v48Fuse" disabled>V48 幾何融合</button>
+  <button id="v49Materials" disabled>V49 材質檢查</button>
+  <button id="v50Validate" disabled>V50 完整驗收</button>
+ </div>
+ <div class="actions">
+  <button class="alt" id="v50Preview" disabled>預覽組合</button>
+  <button class="alt" id="v50Export" disabled>匯出 GLB</button>
+  <button class="alt" id="v50Save" >保存 DNA 配方</button>
+  <label for="v50Load">載入 DNA 配方</label><input id="v50Load" type="file" accept=".json,application/json">
+ </div>
+ <pre id="v50Report">V46–V50 尚未執行。</pre>
+</div>
+<button id="v50Launch">🧬 V50 核心</button>
+
+
+<script type="module">
+(()=>{
+ const roles=['head','body','arms','legs','tail','wings'];
+ const zh={head:'頭部',body:'身體',arms:'手',legs:'腳',tail:'尾巴',wings:'翅膀'};
+ const aliases={
+  head:/head|neck|jaw|face|skull|cranium|snout|muzzle|頭|頸|臉|下巴/i,
+  body:/root|hips|pelvis|spine|chest|torso|body|abdomen|waist|rib|身體|軀幹|胸|腰|骨盆/i,
+  arms:/arm|hand|wrist|elbow|shoulder|finger|claw|forelimb|手|臂|肩|爪|前肢/i,
+  legs:/leg|foot|feet|toe|knee|ankle|thigh|shin|hindlimb|腳|腿|膝|踝|後肢/i,
+  tail:/tail|尾/i,wings:/wing|feather|翅|翼/i
+ };
+ const $=id=>document.getElementById(id);
+ const S={T:null,loader:null,Exporter:null,selection:{},parts:[],assembled:null,alignment:null,materialReport:null,qa:null,logs:[],recipeSchema:'pokemon-dna-v50'};
+ const log=m=>{S.logs.push(m);if(S.logs.length>40)S.logs.shift();$('v50Status').textContent=m;$('v50Report').textContent=S.logs.slice(-16).join('\n');};
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const roleOf=n=>{for(const r of roles)if(aliases[r].test(String(n||'')))return r;return '';};
+ const bridge=()=>window.__realGLBV36?.roles?.()||{};
+ function refresh(){
+  S.selection=bridge();
+  $('v50RoleList').innerHTML=roles.map(r=>`<span><b>${zh[r]}</b><br>${S.selection[r]?`#${S.selection[r].id} ${esc(S.selection[r].name)}`:'未指定來源'}</span>`).join('');
+ }
+ async function init(){
+  const T=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js');
+  const {GLTFLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js');
+  const {DRACOLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/DRACOLoader.js');
+  const {GLTFExporter}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/exporters/GLTFExporter.js');
+  const draco=new DRACOLoader();draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+  S.T=T;S.loader=new GLTFLoader();S.loader.setDRACOLoader(draco);S.Exporter=GLTFExporter;
+  refresh();log('V46–V50 核心已載入。請先選擇六大部位來源，再執行 V46。');
+ }
+ const load=item=>new Promise((resolve,reject)=>S.loader.load(item.url,g=>resolve(g),undefined,reject));
+ function meshMaterials(mesh){return Array.isArray(mesh.material)?mesh.material:[mesh.material];}
+ function getBindPosition(mesh,index,out){
+  const attr=mesh.geometry.attributes.position;
+  out.fromBufferAttribute(attr,index);
+  if(mesh.isSkinnedMesh && typeof mesh.applyBoneTransform==='function')mesh.applyBoneTransform(index,out);
+  return out.applyMatrix4(mesh.matrixWorld);
+ }
+ function extractRoleFromModel(item,role,gltf){
+  const T=S.T,root=gltf.scene;root.updateMatrixWorld(true);
+  const modelBox=new T.Box3().setFromObject(root),modelSize=modelBox.getSize(new T.Vector3());
+  const maxDim=Math.max(modelSize.x,modelSize.y,modelSize.z,1e-6);
+  const center=modelBox.getCenter(new T.Vector3()),scale=2/maxDim;
+  const extracted=[];let skinnedCount=0,matchingBoneCount=0,facesConsidered=0,facesAccepted=0;
+  root.traverse(mesh=>{
+   if(!mesh.isMesh||!mesh.geometry)return;
+   const g=mesh.geometry,pos=g.attributes.position;
+   if(!pos)return;
+   let skinIndex=g.attributes.skinIndex,skinWeight=g.attributes.skinWeight;
+   let boneRole=[];
+   if(mesh.isSkinnedMesh&&mesh.skeleton&&skinIndex&&skinWeight){
+    skinnedCount++;
+    boneRole=mesh.skeleton.bones.map(b=>roleOf(b.name));
+    matchingBoneCount+=boneRole.filter(x=>x===role).length;
+   }else{
+    // A non-skinned mesh is accepted only when its node name explicitly names this role.
+    if(roleOf(mesh.name)!==role)return;
+   }
+   const index=g.index?.array,triCount=Math.floor((index?index.length:pos.count)/3);
+   const selected=[];
+   for(let t=0;t<triCount;t++){
+    const ids=[0,1,2].map(k=>index?index[t*3+k]:t*3+k);facesConsidered++;
+    let score=0,runner=0;
+    if(mesh.isSkinnedMesh&&skinIndex&&skinWeight){
+     const accum=ids.map(v=>{
+      let sum=0;
+      for(let k=0;k<skinIndex.itemSize;k++){
+       const bi=skinIndex.getComponent(v,k),w=skinWeight.getComponent(v,k);
+       if(boneRole[bi]===role)sum+=w;
+      }
+      return sum;
+     });
+     score=(accum[0]+accum[1]+accum[2])/3;
+     // Do not force uncertain seam triangles into a part.
+     const perRole=roles.map(r=>ids.reduce((a,v)=>{
+      let wsum=0;
+      for(let k=0;k<skinIndex.itemSize;k++)if(boneRole[skinIndex.getComponent(v,k)]===r)wsum+=skinWeight.getComponent(v,k);
+      return a+wsum/3;
+     },0)).sort((a,b)=>b-a);
+     runner=perRole[1]||0;
+     if(score<.48||score-runner<.10)continue;
+    }
+    selected.push({ids,sourceFace:t});facesAccepted++;
+   }
+   if(!selected.length)return;
+   const oldToNew=new Map(),oldVertices=[],indices=[];
+   for(const faceRec of selected)for(const old of faceRec.ids){
+    let n=oldToNew.get(old);if(n===undefined){n=oldVertices.length;oldToNew.set(old,n);oldVertices.push(old);}indices.push(n);
+   }
+   const out=new T.BufferGeometry();
+   // Preserve UV, color, tangent and other vertex attributes when their layout is valid.
+   for(const [name,attr] of Object.entries(g.attributes)){
+    if(['skinIndex','skinWeight'].includes(name))continue;
+    const arr=new attr.array.constructor(oldVertices.length*attr.itemSize);
+    oldVertices.forEach((old,i)=>{for(let k=0;k<attr.itemSize;k++)arr[i*attr.itemSize+k]=attr.array[old*attr.itemSize+k];});
+    out.setAttribute(name,new T.BufferAttribute(arr,attr.itemSize,attr.normalized));
+   }
+   const pArray=new Float32Array(oldVertices.length*3),v=new T.Vector3();
+   oldVertices.forEach((old,i)=>{
+    getBindPosition(mesh,old,v);
+    v.sub(center).multiplyScalar(scale);
+    pArray.set(v.toArray(),i*3);
+   });
+   out.setAttribute('position',new T.BufferAttribute(pArray,3));
+   out.setIndex(indices);
+   // Rebuild material groups from each selected triangle's original face index.
+   if(g.groups?.length && Array.isArray(mesh.material)){
+    const faceMaterial=new Map();
+    for(const group of g.groups){
+     const first=Math.floor(group.start/3),last=Math.ceil((group.start+group.count)/3);
+     for(let face=first;face<last;face++)faceMaterial.set(face,group.materialIndex);
+    }
+    let runStart=0,lastMat=faceMaterial.get(selected[0]?.sourceFace)||0;
+    for(let i=1;i<selected.length;i++){
+     const mat=faceMaterial.get(selected[i].sourceFace)||0;
+     if(mat!==lastMat){out.addGroup(runStart*3,(i-runStart)*3,lastMat);runStart=i;lastMat=mat;}
+    }
+    if(selected.length)out.addGroup(runStart*3,(selected.length-runStart)*3,lastMat);
+   }
+   out.computeVertexNormals();out.computeBoundingBox();out.computeBoundingSphere();
+   const mats=meshMaterials(mesh).map(m=>m?.clone?.()||new T.MeshStandardMaterial({color:0x999999}));
+   const material=mats.length===1?mats[0]:mats;
+   const partMesh=new T.Mesh(out,material);partMesh.name=`${role}_${item.id}_${mesh.name||'mesh'}`;
+   partMesh.updateMatrixWorld(true);
+   extracted.push({role,item,mesh:partMesh,geometry:out,materials:mats,sourceMesh:mesh.name||'Mesh',faces:selected.length,vertices:oldVertices.length,sourceHadSkin:!!mesh.isSkinnedMesh,sourceBounds:{center:modelBox.getCenter(new T.Vector3()).toArray(),size:modelSize.toArray()},normalization:{center:center.toArray(),scale}});
+  });
+  return {parts:extracted,stats:{skinnedCount,matchingBoneCount,facesConsidered,facesAccepted,modelSize:modelSize.toArray()}};
+ }
+ async function analyzeV46(){
+  refresh();const selected=S.selection;
+  if(!roles.some(r=>selected[r])){log('請先在原本六大部位選單選擇至少一個真實寶可夢來源。');return;}
+  const parts=[],stats=[];
+  for(const role of roles){
+   const item=selected[role];if(!item)continue;
+   log(`V46：分析 ${item.name} 的${zh[role]}…`);
+   try{
+    const gltf=await load(item),result=extractRoleFromModel(item,role,gltf);
+    parts.push(...result.parts);stats.push({role,item,stats:result.stats});
+    log(`${item.name} ${zh[role]}：提取 ${result.parts.length} 個 Mesh，${result.stats.facesAccepted}/${result.stats.facesConsidered} 面；骨骼角色命中 ${result.stats.matchingBoneCount}。`);
+   }catch(e){log(`${item.name} ${zh[role]} 解析失敗：${e.message||e}`);}
+  }
+  S.parts=parts;S.alignment=null;S.assembled=null;S.materialReport=null;S.qa=null;S.sourceStats=stats;
+  $('v47Map').disabled=!parts.length;$('v48Fuse').disabled=true;$('v49Materials').disabled=true;$('v50Validate').disabled=true;$('v50Preview').disabled=true;$('v50Export').disabled=true;
+  log(`V46 完成：取得 ${parts.length} 個真實來源 Mesh。未能按骨骼命名辨識的部位會保持缺失，不會用假模型補齊。`);
+ }
+ function partBounds(part){
+  part.mesh.updateMatrixWorld(true);const box=new S.T.Box3().setFromObject(part.mesh);
+  return {box,center:box.getCenter(new S.T.Vector3()),size:box.getSize(new S.T.Vector3())};
+ }
+ function mapV47(){
+  if(!S.parts.length){log('請先執行 V46。');return;}
+  const T=S.T;
+  const summaries=S.parts.map(p=>({role:p.role,source:p.item.name,id:p.item.id,...partBounds(p)}));
+  const byRole=Object.fromEntries(roles.map(r=>[r,summaries.filter(x=>x.role===r)]));
+  // Establish one canonical assembly envelope; do not silently warp each piece to an invented skeleton.
+  const all=new T.Box3();summaries.forEach(x=>all.union(x.box));
+  const size=all.getSize(new T.Vector3()),center=all.getCenter(new T.Vector3());
+  S.alignment={schema:'pokemon-canonical-layout-v1',referenceBounds:{center:center.toArray(),size:size.toArray()},parts:summaries.map(x=>({role:x.role,source:x.source,id:x.id,center:x.center.toArray(),size:x.size.toArray(),normalizedCenter:x.center.clone().sub(center).toArray().map(v=>v/Math.max(size.length(),1e-6))}))};
+  $('v48Fuse').disabled=false;$('v49Materials').disabled=false;
+  log('V47：已建立跨來源部位空間描述與共同包圍盒。注意：這是位置／尺度基準，不是完整骨架重定向；不同物種的關節拓樸仍需專門映射。');
+ }
+ function assembleV48(){
+  if(!S.parts.length||!S.alignment){log('先完成 V46 與 V47。');return;}
+  const T=S.T,root=new T.Group();root.name='Pokemon_DNA_Assembly_V48';
+  S.parts.forEach(p=>{const m=p.mesh.clone();m.geometry=p.geometry.clone();m.material=Array.isArray(p.mesh.material)?p.mesh.material.map(x=>x.clone()):p.mesh.material.clone();m.userData={role:p.role,sourceId:p.item.id,sourceName:p.item.name};root.add(m);});
+  root.updateMatrixWorld(true);S.assembled=root;
+  const report=[];
+  root.traverse(m=>{if(m.isMesh){const b=new T.Box3().setFromObject(m),s=b.getSize(new T.Vector3());report.push(`${m.name}: ${m.geometry.index?.count/3||0} 三角面，尺寸 ${s.toArray().map(v=>v.toFixed(2)).join('×')}`);}});
+  log('V48：已組合真實部位網格（目前仍為多個獨立表面，並非焊接融合）。\n'+report.join('\n'));
+  $('v50Preview').disabled=false;$('v50Export').disabled=false;
+ }
+ function edgeStats(geometry){
+  const idx=geometry.index?.array, pos=geometry.attributes.position;
+  if(!pos)return {boundary:0,nonManifold:0,degenerate:0,triangles:0};
+  const counts=new Map(),tri=Math.floor((idx?idx.length:pos.count)/3);let degenerate=0;
+  for(let t=0;t<tri;t++){
+   const a=idx?idx[t*3]:t*3,b=idx?idx[t*3+1]:t*3+1,c=idx?idx[t*3+2]:t*3+2;
+   if(a===b||b===c||a===c){degenerate++;continue;}
+   for(const [u,v] of [[a,b],[b,c],[c,a]]){const k=u<v?`${u},${v}`:`${v},${u}`;counts.set(k,(counts.get(k)||0)+1);}
+  }
+  let boundary=0,nonManifold=0;for(const n of counts.values()){if(n===1)boundary++;else if(n>2)nonManifold++;}
+  return {boundary,nonManifold,degenerate,triangles:tri};
+ }
+ async function fuseV48(){
+  if(!S.assembled){assembleV48();if(!S.assembled)return;}
+  const T=S.T,meshes=[];S.assembled.traverse(o=>{if(o.isMesh)meshes.push(o);});
+  if(meshes.length<2){log('V48：只有一個部位，無法進行跨部位聯集。');return;}
+  const before=meshes.map(m=>({name:m.name,...edgeStats(m.geometry)}));
+  const open=before.filter(x=>x.boundary||x.nonManifold);
+  if(open.length){log('V48 安全檢查：來源部位包含開放邊或非流形邊，停止布林聯集，避免產生錯誤的「融合成功」。\n'+before.map(x=>`${x.name}: boundary ${x.boundary}, non-manifold ${x.nonManifold}`).join('\n'));return;}
+  try{
+   const {Brush,Evaluator,ADDITION}=await import('https://cdn.jsdelivr.net/npm/three-bvh-csg@0.0.17/build/index.module.js');
+   const evaluator=new Evaluator();let result=new Brush(meshes[0].geometry.clone(),meshes[0].material.clone());result.updateMatrixWorld(true);
+   for(let i=1;i<meshes.length;i++){const next=new Brush(meshes[i].geometry.clone(),meshes[i].material.clone());next.updateMatrixWorld(true);result=evaluator.evaluate(result,next,ADDITION);}
+   const after=edgeStats(result.geometry);
+   if(after.boundary||after.nonManifold){log(`V48 布林結果未通過拓樸驗證：開放邊 ${after.boundary}、非流形邊 ${after.nonManifold}。保留原組合模型。`);return;}
+   const root=new T.Group();root.name='Pokemon_DNA_Union_V48';root.add(result);S.assembled=root;
+   log(`V48 布林聯集通過邊界檢查：${after.triangles} 三角面，開放邊 0，非流形邊 0。仍需檢查材質與實際外觀。`);
+  }catch(e){log('V48 布林聯集失敗，保留多網格組合：'+(e.message||e));}
+ }
+ function inspectMaterials(){
+  if(!S.assembled){log('請先執行 V48 組合。');return;}
+  const rows=[];S.assembled.traverse(o=>{if(!o.isMesh)return;for(const m of (Array.isArray(o.material)?o.material:[o.material]))rows.push({mesh:o.name,material:m?.name||m?.type||'unknown',color:m?.color?.getHexString?.(),map:!!m?.map,normalMap:!!m?.normalMap,roughness:m?.roughness,metalness:m?.metalness,vertexColors:!!m?.vertexColors});});
+  S.materialReport=rows;
+  log('V49 材質盤點：保留來源材質與 UV／頂點色屬性；貼圖能否匯出取決於來源貼圖 CORS 與 GLTFExporter 支援。\n'+rows.map(x=>`${x.mesh}: ${x.material}, color #${x.color||'—'}, map ${x.map?'有':'無'}, normal ${x.normalMap?'有':'無'}`).join('\n'));
+ }
+ function validateV50(){
+  if(!S.assembled){log('尚未組合模型，先執行 V48。');return;}
+  const rows=[];S.assembled.updateMatrixWorld(true);
+  S.assembled.traverse(o=>{if(o.isMesh){const e=edgeStats(o.geometry),b=new S.T.Box3().setFromObject(o),size=b.getSize(new S.T.Vector3());rows.push({mesh:o.name,...e,finite:[...o.geometry.attributes.position.array].every(Number.isFinite),size:size.toArray()});}});
+  const missing=roles.filter(r=>!S.parts.some(p=>p.role===r));
+  const allClosed=rows.every(r=>r.boundary===0&&r.nonManifold===0&&r.degenerate===0);
+  S.qa={version:50,sourceCount:Object.values(S.selection).filter(Boolean).length,partCount:S.parts.length,missingRoles:missing,meshes:rows,allClosed,materials:S.materialReport||[]};
+  $('v50Export').disabled=false;
+  log('V50 驗收報告：\n'+JSON.stringify(S.qa,null,2)+'\n結論：'+(allClosed?'目前輸出網格通過基本拓樸檢查。':'仍有網格品質問題。')+(missing.length?'；缺少部位：'+missing.map(r=>zh[r]).join('、'):'；六大部位皆有提取結果。'));
+ }
+ function preview(){
+  if(!S.assembled)return;
+  const scene=new S.T.Scene();scene.add(S.assembled.clone(true));
+  new S.Exporter().parse(scene,result=>{
+   const blob=new Blob([result],{type:'model/gltf-binary'}),url=URL.createObjectURL(blob);
+   const viewer=$('realModelViewer');viewer.src=url;$('realModelStage').classList.add('active');const canvas=$('gameCanvas');if(canvas)canvas.style.visibility='hidden';
+   log('已送入 3D 預覽。');
+  },e=>log('預覽輸出失敗：'+(e.message||e)),{binary:true,onlyVisible:true});
+ }
+ function exportGLB(){
+  if(!S.assembled){log('沒有可匯出的組合模型。');return;}
+  const scene=new S.T.Scene();scene.add(S.assembled.clone(true));
+  new S.Exporter().parse(scene,result=>{
+   const blob=new Blob([result],{type:'model/gltf-binary'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pokemon_DNA_fusion_v50.glb';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+   log('GLB 匯出完成。');
+  },e=>log('GLB 匯出失敗：'+(e.message||e)),{binary:true,onlyVisible:true});
+ }
+ function recipe(){
+  return {schema:S.recipeSchema,version:50,createdAt:new Date().toISOString(),parts:Object.fromEntries(roles.map(r=>[r,S.selection[r]?{id:S.selection[r].id,name:S.selection[r].name,form:S.selection[r].form,url:S.selection[r].url}:null])),alignment:S.alignment,qa:S.qa};
+ }
+ function saveRecipe(){
+  const blob=new Blob([JSON.stringify(recipe(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pokemon_DNA_recipe_v50.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);log('DNA 配方已保存。');
+ }
+ async function loadRecipe(file){
+  try{
+   const data=JSON.parse(await file.text());if(data.schema!==S.recipeSchema)throw new Error('配方格式不相容');
+   if(!window.__realGLBV36?.setRoles)throw new Error('來源選擇器尚未就緒');
+   window.__realGLBV36.setRoles(data.parts);refresh();log('DNA 配方已載入來源欄位。請重新執行 V46 以載入模型資料。');
+  }catch(e){log('載入失敗：'+(e.message||e));}
+ }
+ $('v50Launch').addEventListener('click',()=>{$('v50Panel').classList.toggle('open');refresh();});
+ $('v50Close').addEventListener('click',()=>$('v50Panel').classList.remove('open'));
+ $('v46Analyze').addEventListener('click',analyzeV46);
+ $('v47Map').addEventListener('click',mapV47);
+ $('v48Fuse').addEventListener('click',fuseV48);
+ $('v49Materials').addEventListener('click',inspectMaterials);
+ $('v50Validate').addEventListener('click',validateV50);
+ $('v50Preview').addEventListener('click',preview);
+ $('v50Export').addEventListener('click',exportGLB);
+ $('v50Save').addEventListener('click',saveRecipe);
+ $('v50Load').addEventListener('change',e=>{if(e.target.files?.[0])loadRecipe(e.target.files[0]);});
+ init().catch(e=>log('核心載入失敗：'+(e.message||e)));
+})();
+</script>
+
+
+<script>
+(()=>{
+ const stage=5;
+ const ids=['v46Analyze','v47Map','v48Fuse','v49Materials','v50Validate','v50Preview','v50Export'];
+ ids.forEach((id,i)=>{const e=document.getElementById(id);if(e&&i+1>stage)e.disabled=true;});
+ const report=document.getElementById('v50Report');
+ if(report)report.textContent='V50 integrated DNA recipe, preview, GLB export and topology acceptance report.';
 })();
 </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","spa":2}' crossorigin="anonymous"></script>
