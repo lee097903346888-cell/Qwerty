@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#f6edf5">
-<title>寶可夢自由拼裝工坊 V35</title>
+<title>寶可夢自由拼裝工坊 V36</title>
 <style>
 :root{--ink:#4c3e50;--muted:#8f7d91;--line:#eadceb;--plum:#77577e;--paper:#fffdf6;--pink:#fff1fb;--shadow:0 12px 35px #755c8250}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
@@ -72,11 +72,38 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 }
 @media (max-width:370px){.brand h1{font-size:10px}.topRight button{padding:8px 5px}.partButton{width:46px;height:59px}.sourceImage{width:60px;flex-basis:60px}}
 </style>
+
+<style>
+#realModelBtn{background:#77577e!important;color:#fff!important}
+#realModelStage{position:fixed;inset:0;z-index:2;display:none;background:transparent;pointer-events:none}
+#realModelStage.active{display:block}
+#realModelViewer{width:100%;height:100%;background:transparent;--poster-color:transparent;pointer-events:auto}
+#realModelHUD{position:fixed;z-index:12;left:50%;top:calc(env(safe-area-inset-top) + 110px);transform:translateX(-50%);max-width:92vw;background:#fffdf4ed;border:2px solid white;border-radius:18px;padding:9px 14px;font-size:12px;font-weight:850;color:#77577e;box-shadow:0 8px 24px #755c8222;text-align:center;display:none}
+#realModelHUD.show{display:block}
+#realPicker{position:fixed;z-index:30;inset:0;background:#211a2580;display:none;align-items:center;justify-content:center;padding:16px}
+#realPicker.show{display:flex}
+#realPickerCard{width:min(620px,96vw);max-height:min(82dvh,780px);overflow:hidden;background:#fffdf6;border:2px solid white;border-radius:24px;box-shadow:0 20px 60px #20142755;display:flex;flex-direction:column;padding:14px;color:#4c3e50}
+#realPickerHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+#realPickerHeader h2{font-size:17px;margin:0}
+#realPickerClose{border:0;border-radius:12px;padding:9px 13px;background:#f1e5f2;color:#77577e;font-weight:900}
+#realSearch{width:100%;border:2px solid #eadceb;border-radius:14px;padding:12px;font-size:16px;background:white;color:#4c3e50;margin-bottom:9px}
+#realPickerHint{font-size:12px;line-height:1.5;color:#8f7d91;margin-bottom:9px}
+#realCatalog{overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:2px}
+.realCard{display:flex;align-items:center;gap:10px;text-align:left;padding:10px;border:2px solid #eadceb;border-radius:15px;background:white;color:#4c3e50;min-width:0}
+.realCard:active{background:#f4e9f5}
+.realBall{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#f5e9f5,#e5d6eb);display:grid;place-items:center;font-size:22px;flex:none}
+.realCard b{display:block;font-size:13px}
+.realCard small{display:block;color:#8f7d91;font-size:11px;overflow-wrap:anywhere}
+#realSelectionSummary{font-size:12px;color:#77577e;font-weight:800;padding-top:9px}
+@media(max-width:620px){#realPicker{padding:8px}#realPickerCard{max-height:82dvh;padding:11px}#realCatalog{grid-template-columns:1fr}.realBall{width:43px;height:43px}}
+</style>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+
 </head>
 <body>
 <canvas id="gameCanvas" aria-label="3D DNA 融合模型。拖曳可旋轉視角，雙指縮放。"></canvas>
 <header class="top">
- <div class="brand"><div class="brandIcon">🧬</div><div><h1>寶可夢自由拼裝工坊</h1><small>V35 · DNA CODE FUSION</small></div></div>
+ <div class="brand"><div class="brandIcon">🧬</div><div><h1>寶可夢自由拼裝工坊</h1><small>V36 · REAL GLB MODEL LIBRARY</small></div></div>
  <div class="topRight"><button class="statusBtn" id="fusionStatus" disabled>生成中</button><button id="albumBtn">🃏 圖冊</button><button id="gearBtn" aria-label="設定">⚙</button><button id="clearBtn">清空</button></div>
 </header>
 <div id="status" role="status">準備 3D 引擎…</div>
@@ -100,7 +127,7 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
  <div class="settingRow rangeRow"><div><b>輪廓粗細 <output id="outlineThicknessValue">2.1</output></b></div><input id="outlineThickness" type="range" min="0.5" max="6" step="0.1" value="2.1"></div>
  <div class="modalActions"><button id="copyRecipe" class="secondary">複製 DNA 配方</button><button id="importRecipe" class="secondary">匯入 DNA 配方</button><button id="exportGLB">匯出新模型 GLB</button></div>
  <input id="recipeOutput" value="DNA-006-006-006-006-006-006" aria-label="可複製或貼入的 DNA 配方">
- <span id="infoNote">這是以六組寶可夢特徵代碼重新生成的新 3D 公仔，不是原始官方 GLB 的網格重組。融合後只有一份封閉模型網格。</span>
+ <span id="infoNote">V36 正在接入真實 GLB 模型庫。真實模型載入與六大部位解剖分割是不同階段；尚未分割的完整模型不會被冒稱為單一部位。</span>
 </div></div>
 <div class="modal" id="albumModal"><div class="modalCard">
  <div class="modalHead"><h2>🃏 我的融合圖冊</h2><button id="closeAlbum">關閉</button></div>
@@ -108,7 +135,7 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
  <div class="modalActions"><button id="saveCard">收藏這隻新模型</button><button class="secondary" onclick="document.getElementById('albumModal').classList.remove('show');document.getElementById('gearBtn').click()">匯出 GLB</button></div>
 </div></div>
 <script>
-/* V35 pure JS procedural fusion kernel; no external dependency. */
+/* V36 real GLB asset integration prototype; anatomical segmentation is a separate pipeline. */
 const FusionCore = (() => {
  'use strict';
  const roles=['head','body','arms','legs','tail','wings'];
@@ -991,6 +1018,99 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FusionCore;
 })();
 
 </script>
+
+<div id="realModelStage" aria-label="真實寶可夢 GLB 模型預覽">
+ <model-viewer id="realModelViewer" camera-controls touch-action="pan-y" interaction-prompt="none"
+   shadow-intensity="0.65" exposure="1.05" camera-orbit="0deg 72deg 4.2m"
+   min-camera-orbit="auto 10deg 1m" max-camera-orbit="auto 170deg 18m"
+   field-of-view="30deg" environment-image="neutral"></model-viewer>
+</div>
+<div id="realModelHUD">真實 GLB 模型預覽｜選擇部位來源以載入模型</div>
+<div id="realPicker">
+ <div id="realPickerCard">
+  <div id="realPickerHeader"><h2 id="realPickerTitle">選擇真實寶可夢模型</h2><button id="realPickerClose">關閉</button></div>
+  <input id="realSearch" placeholder="搜尋寶可夢名稱或全國圖鑑編號">
+  <div id="realPickerHint">資料來源：Pokemon-3D-api/assets。這裡載入的是原始完整 GLB 模型。每個來源模型尚未自動拆成頭、身體、手、腳、尾巴、翅膀；在完成可靠的解剖分割前，不會把整隻模型假裝成單一部位，也不會謊稱已完成真正融合。</div>
+  <div id="realCatalog"><p>正在載入模型清單…</p></div>
+  <div id="realSelectionSummary">已選部位：尚未選擇</div>
+ </div>
+</div>
+
+<script>
+(()=>{
+ const roles=['head','body','arms','legs','tail','wings'];
+ const labels={head:'頭部',body:'身體',arms:'手',legs:'腳',tail:'尾巴',wings:'翅膀'};
+ const roleCodes={head:null,body:null,arms:null,legs:null,tail:null,wings:null};
+ let currentRole='head', catalog=[], filtered=[];
+ const $=id=>document.getElementById(id);
+ const stage=$('realModelStage'), viewer=$('realModelViewer'), hud=$('realModelHUD');
+ const originalCanvas=$('gameCanvas');
+ const btn=document.createElement('button');
+ btn.id='realModelBtn';btn.textContent='🧬 真實模型庫';
+ const topRight=document.querySelector('.topRight');
+ if(topRight)topRight.insertBefore(btn,topRight.firstChild);
+ function status(s){hud.textContent=s;hud.classList.add('show');}
+ function updateSummary(){
+  $('realSelectionSummary').textContent='已選部位：'+roles.map(r=>labels[r]+' '+(roleCodes[r]?.name||'未選')).join(' ｜ ');
+ }
+ function open(role){
+  currentRole=role;
+  $('realPickerTitle').textContent='選擇'+labels[role]+'的真實模型來源';
+  $('realSearch').value='';
+  draw();
+  $('realPicker').classList.add('show');
+ }
+ function close(){$('realPicker').classList.remove('show');}
+ $('realPickerClose').addEventListener('click',close);
+ btn.addEventListener('click',()=>open(currentRole));
+ // Replace the V35 bottom role buttons' action with the real-model source picker.
+ // Capture the role-tab click before V35's procedural picker handler.
+ document.addEventListener('click',e=>{
+  const b=e.target.closest('.partButton');
+  if(!b)return;
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+  open(b.dataset.role);
+ },true);
+ async function loadCatalog(){
+  try{
+   const res=await fetch('https://pokemon-3d-api.onrender.com/v1/pokemon');
+   if(!res.ok)throw new Error('API HTTP '+res.status);
+   const data=await res.json();
+   const list=data.pokemon||data;
+   catalog=[];
+   for(const p of list){
+    const form=(p.forms||[]).find(f=>f.formName==='regular')||(p.forms||[])[0];
+    if(form?.model)catalog.push({id:p.id,name:form.name||p.name||('Pokemon '+p.id),form:form.formName||'regular',url:form.model});
+   }
+   catalog.sort((a,b)=>a.id-b.id);
+   draw();
+   status('真實模型庫已載入 '+catalog.length+' 筆圖鑑資料。選擇來源後會載入完整 GLB 預覽。');
+  }catch(err){
+   $('realCatalog').innerHTML='<p>模型清單載入失敗：'+String(err.message||err)+'。請確認網路連線，稍後再試。</p>';
+   status('真實模型 API 尚未連線；V35 原型仍保留。');
+  }
+ }
+ function draw(){
+  const q=$('realSearch').value.trim().toLowerCase();
+  filtered=catalog.filter(x=>String(x.id).includes(q)||x.name.toLowerCase().includes(q));
+  $('realCatalog').innerHTML=filtered.slice(0,240).map(x=>`<button class="realCard" data-id="${x.id}"><span class="realBall">🐾</span><span><b>${x.name}</b><small>#${x.id} · ${x.form} · ${labels[currentRole]}來源</small></span></button>`).join('')||'<p>沒有符合的寶可夢。</p>';
+  $('realCatalog').querySelectorAll('.realCard').forEach(b=>b.addEventListener('click',()=>{
+   const item=filtered.find(x=>x.id===Number(b.dataset.id));if(!item)return;
+   roleCodes[currentRole]=item;
+   viewer.src=item.url;
+   stage.classList.add('active');
+   originalCanvas.style.visibility='hidden';
+   status('已載入真實模型：'+item.name+'（#'+item.id+'）。目前預覽的是完整來源模型，尚未進行部位切割。');
+   updateSummary();close();
+  }));
+ }
+ $('realSearch').addEventListener('input',draw);
+ // Start with a real catalog load; don't falsely relabel procedural output as genuine assets.
+ updateSummary();loadCatalog();
+ window.__realGLBV36={roles:()=>({...roleCodes}),open,loadCatalog};
+})();
+</script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","spa":2}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","spa":2}' crossorigin="anonymous"></script>
 </body></html>
+</html>
