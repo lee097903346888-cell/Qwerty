@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#f6edf5">
-<title>寶可夢自由拼裝工坊 V36</title>
+<title>寶可夢自由拼裝工坊 V40</title>
 <style>
 :root{--ink:#4c3e50;--muted:#8f7d91;--line:#eadceb;--plum:#77577e;--paper:#fffdf6;--pink:#fff1fb;--shadow:0 12px 35px #755c8250}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
@@ -99,11 +99,52 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 </style>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 
+
+<style>
+#meshInspectBtn{background:#77577e!important;color:#fff!important}
+#meshInspector{position:fixed;z-index:40;inset:0;background:#211a2588;display:none;align-items:center;justify-content:center;padding:12px}
+#meshInspector.show{display:flex}
+#meshInspectorCard{width:min(760px,98vw);height:min(88dvh,900px);background:#fffdf6;border:2px solid white;border-radius:22px;box-shadow:0 20px 60px #20142755;display:flex;flex-direction:column;overflow:hidden;color:#4c3e50}
+#meshInspectorHead{padding:14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eadceb;gap:8px}
+#meshInspectorHead h2{font-size:17px;margin:0}
+.meshAction{border:0;border-radius:12px;background:#77577e;color:white;padding:9px 12px;font-weight:850}
+.meshAction.secondary{background:#f0e5f1;color:#77577e}
+#meshInspectorInfo{padding:10px 14px;font-size:12px;line-height:1.55;color:#816f84;background:#fbf5fb;border-bottom:1px solid #eadceb}
+#meshInspectorSummary{font-size:12px;font-weight:900;color:#77577e;padding:10px 14px}
+#meshList{overflow:auto;padding:0 12px 14px;display:flex;flex-direction:column;gap:8px}
+.meshRow{border:1px solid #e8dce9;border-radius:13px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) 125px;gap:8px;align-items:center;background:#fff}
+.meshRow b{font-size:12px;display:block;overflow-wrap:anywhere}
+.meshRow small{font-size:10px;color:#8f7d91;display:block;line-height:1.45;overflow-wrap:anywhere}
+.meshRow select{width:100%;border:1px solid #e4d5e7;border-radius:10px;padding:8px;background:#fff;color:#604d62;font-weight:800;font-size:11px}
+#meshInspectorFoot{padding:10px 14px;border-top:1px solid #eadceb;display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between}
+#meshInspectorFoot .left,#meshInspectorFoot .right{display:flex;gap:7px;flex-wrap:wrap}
+#meshInspectorFoot button{font-size:11px}
+@media(max-width:520px){#meshInspector{padding:5px}#meshInspectorCard{height:91dvh}#meshInspectorHead{padding:10px}#meshInspectorHead h2{font-size:14px}.meshRow{grid-template-columns:minmax(0,1fr) 105px;padding:8px}.meshRow select{font-size:10px;padding:7px}}
+</style>
+
+
+<style>
+.skinReport{margin:0 12px 10px;padding:10px;border:1px solid #e7d8e9;border-radius:12px;background:#fcf7fc;color:#66546b;font-size:11px;line-height:1.55}
+.skinReport strong{color:#77577e}
+.skinReport .muted{color:#98889b}
+.skinBoneRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:7px 0;border-top:1px solid #eee4ef}
+.skinBoneRow:first-child{border-top:0}
+.skinBoneRow b{overflow-wrap:anywhere}
+</style>
+
+
+<style>
+#canonicalBoneMap .boneMapRow{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px;align-items:center;padding:7px 0;border-top:1px solid #eee4ef}
+#canonicalBoneMap .boneMapRow:first-child{border-top:0}
+#canonicalBoneMap select{width:100%;border:1px solid #e4d5e7;border-radius:9px;padding:7px;background:#fff;color:#604d62;font-size:11px}
+#canonicalBoneMap .confidence{font-variant-numeric:tabular-nums;color:#8a6d90;font-size:10px}
+</style>
+
 </head>
 <body>
 <canvas id="gameCanvas" aria-label="3D DNA 融合模型。拖曳可旋轉視角，雙指縮放。"></canvas>
 <header class="top">
- <div class="brand"><div class="brandIcon">🧬</div><div><h1>寶可夢自由拼裝工坊</h1><small>V36 · REAL GLB MODEL LIBRARY</small></div></div>
+ <div class="brand"><div class="brandIcon">🧬</div><div><h1>寶可夢自由拼裝工坊</h1><small>V40 · CANONICAL SKELETON MAPPER</small></div></div>
  <div class="topRight"><button class="statusBtn" id="fusionStatus" disabled>生成中</button><button id="albumBtn">🃏 圖冊</button><button id="gearBtn" aria-label="設定">⚙</button><button id="clearBtn">清空</button></div>
 </header>
 <div id="status" role="status">準備 3D 引擎…</div>
@@ -127,7 +168,7 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
  <div class="settingRow rangeRow"><div><b>輪廓粗細 <output id="outlineThicknessValue">2.1</output></b></div><input id="outlineThickness" type="range" min="0.5" max="6" step="0.1" value="2.1"></div>
  <div class="modalActions"><button id="copyRecipe" class="secondary">複製 DNA 配方</button><button id="importRecipe" class="secondary">匯入 DNA 配方</button><button id="exportGLB">匯出新模型 GLB</button></div>
  <input id="recipeOutput" value="DNA-006-006-006-006-006-006" aria-label="可複製或貼入的 DNA 配方">
- <span id="infoNote">V36 正在接入真實 GLB 模型庫。真實模型載入與六大部位解剖分割是不同階段；尚未分割的完整模型不會被冒稱為單一部位。</span>
+ <span id="infoNote">V40 新增標準骨架角色映射、骨骼名稱與父子階層推測、正規化骨架位置、信心分數及人工修正；分割改為累計所有骨骼對六大角色的權重，並把模糊接縫面保留為未分類。可匯出骨架 DNA JSON，供不同寶可夢建立跨模型對照。</span>
 </div></div>
 <div class="modal" id="albumModal"><div class="modalCard">
  <div class="modalHead"><h2>🃏 我的融合圖冊</h2><button id="closeAlbum">關閉</button></div>
@@ -135,10 +176,443 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
  <div class="modalActions"><button id="saveCard">收藏這隻新模型</button><button class="secondary" onclick="document.getElementById('albumModal').classList.remove('show');document.getElementById('gearBtn').click()">匯出 GLB</button></div>
 </div></div>
 <script>
-/* V36 real GLB asset integration prototype; anatomical segmentation is a separate pipeline. */
+/* V40 canonical bone-role mapping, confidence scoring and cross-model skeleton profile prototype. */
 const FusionCore = (() => {
  'use strict';
+
  const roles=['head','body','arms','legs','tail','wings'];
+ const roleZh={head:'頭部',body:'身體',arms:'手',legs:'腳',tail:'尾巴',wings:'翅膀'};
+ let activeModel=null, meshRecords=[], threeScene=null, threeReady=false;
+ const roleOptions=()=>'<option value="">未分類</option>'+roles.map(r=>`<option value="${r}">${roleZh[r]}</option>`).join('');
+ async function getThree(){
+  if(threeReady)return window.__v38three;
+  const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js');
+  const {GLTFLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js');
+  const {DRACOLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/DRACOLoader.js');
+  const {GLTFExporter}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/exporters/GLTFExporter.js');
+  const draco=new DRACOLoader();
+  draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+  const loader=new GLTFLoader();loader.setDRACOLoader(draco);
+  window.__v38three={THREE,GLTFLoader,DRACOLoader,GLTFExporter,loader};threeReady=true;return window.__v38three;
+ }
+ function inferRole(s){
+  const n=(s||'').toLowerCase();
+  if(/wing|翅|feather/.test(n))return 'wings';
+  if(/tail|尾/.test(n))return 'tail';
+  if(/head|face|jaw|horn|ear|eye|mouth|頭|臉|角|耳/.test(n))return 'head';
+  if(/arm|hand|claw|finger|手|爪/.test(n))return 'arms';
+  if(/leg|foot|feet|thigh|shin|腳|腿/.test(n))return 'legs';
+  if(/body|torso|chest|belly|abdomen|身體|軀幹/.test(n))return 'body';
+  return '';
+ }
+
+ // Real topology analysis: split indexed/non-indexed triangle meshes into connected
+ // components using shared vertex indices. This does not guess anatomy across a
+ // watertight continuous surface; it only reports geometrically disconnected islands.
+ function connectedTriangleComponents(geometry){
+  const pos=geometry?.attributes?.position;
+  if(!pos||pos.count<3)return [];
+  const idx=geometry.index?geometry.index.array:null;
+  const triCount=Math.floor((idx?idx.length:pos.count)/3);
+  const parent=new Int32Array(pos.count);
+  for(let i=0;i<parent.length;i++)parent[i]=i;
+  const find=x=>{while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x];}return x;};
+  const union=(a,b)=>{a=find(a);b=find(b);if(a!==b)parent[b]=a;};
+  const tris=new Array(triCount);
+  for(let t=0;t<triCount;t++){
+   const a=idx?idx[t*3]:t*3,b=idx?idx[t*3+1]:t*3+1,c=idx?idx[t*3+2]:t*3+2;
+   tris[t]=[a,b,c];union(a,b);union(b,c);
+  }
+  const groups=new Map();
+  for(let t=0;t<triCount;t++){
+   const root=find(tris[t][0]);if(!groups.has(root))groups.set(root,[]);
+   groups.get(root).push(tris[t]);
+  }
+  return [...groups.values()].map((triangles,n)=>{
+   const used=new Set();for(const tri of triangles)for(const v of tri)used.add(v);
+   const xs=[],ys=[],zs=[];
+   for(const v of used){xs.push(pos.getX(v));ys.push(pos.getY(v));zs.push(pos.getZ(v));}
+   const min=[Math.min(...xs),Math.min(...ys),Math.min(...zs)];
+   const max=[Math.max(...xs),Math.max(...ys),Math.max(...zs)];
+   const center=min.map((v,i)=>(v+max[i])/2),size=min.map((v,i)=>max[i]-v);
+   return {component:n+1,triangles:triangles.length,vertices:used.size,center,size,min,max,triangleIndices:triangles};
+  }).sort((a,b)=>b.triangles-a.triangles);
+ }
+ function guessRoleFromBounds(c,all){
+  // Weak heuristic only: use vertical location and lateral extent, never present
+  // as confirmed anatomy. For separated islands, position can suggest candidates.
+  const ys=all.flatMap(x=>[x.min[1],x.max[1]]),ymin=Math.min(...ys),ymax=Math.max(...ys),h=ymax-ymin||1;
+  const cy=(c.center[1]-ymin)/h;
+  const sx=c.size[0],sy=c.size[1],sz=c.size[2];
+  if(cy>.78)return 'head';
+  if(cy<.16)return 'legs';
+  if(sx>h*.48&&cy>.28&&cy<.78)return 'wings';
+  if(cy>.18&&cy<.62&&sy>h*.28)return 'body';
+  return '';
+ }
+ function analyzeSceneComponents(){
+  const components=[];
+  if(!threeScene)return components;
+  threeScene.updateMatrixWorld(true);
+  const T=window.__v38three.THREE;
+  threeScene.traverse(obj=>{
+   if(!obj.isMesh||!obj.geometry)return;
+   const geom=obj.geometry;
+   const local=connectedTriangleComponents(geom);
+   const path=[];let p=obj;while(p&&p!==threeScene){if(p.name)path.unshift(p.name);p=p.parent;}
+   const mat=Array.isArray(obj.material)?obj.material:[obj.material];
+   local.forEach((c,i)=>{
+    const corners=[
+     new T.Vector3(c.min[0],c.min[1],c.min[2]),new T.Vector3(c.max[0],c.max[1],c.max[2])
+    ].map(v=>v.applyMatrix4(obj.matrixWorld));
+    const center=corners[0].clone().add(corners[1]).multiplyScalar(.5);
+    const size=corners[1].clone().sub(corners[0]);
+    components.push({
+     id:`${obj.uuid}:${i}`,meshName:obj.name||'Mesh',path:path.join(' / '),
+     component:c.component,triangles:c.triangles,vertices:c.vertices,
+     center:[center.x,center.y,center.z],size:[Math.abs(size.x),Math.abs(size.y),Math.abs(size.z)],
+     role:'',sourceObject:obj,geometry,triangleIndices:c.triangleIndices,
+     materials:mat.filter(Boolean).map(m=>m.name||m.type)
+    });
+   });
+  });
+  // Role suggestions are deliberately low-confidence and only applied when a mesh
+  // is physically disconnected into multiple islands.
+  const suggestions=components.map(c=>({...c,min:[c.center[0]-c.size[0]/2,c.center[1]-c.size[1]/2,c.center[2]-c.size[2]/2],max:[c.center[0]+c.size[0]/2,c.center[1]+c.size[1]/2,c.center[2]+c.size[2]/2]}));
+  if(suggestions.length>1)suggestions.forEach((c,i)=>{components[i].suggestedRole=guessRoleFromBounds(c,suggestions);});
+  return components;
+ }
+ function componentGeometry(comp){
+  const T=window.__v38three.THREE,src=comp.geometry,dst=new T.BufferGeometry();
+  const sourceAttrs=src.attributes,indices=[];
+  const vertexMap=new Map(),newToOld=[];
+  for(const tri of comp.triangleIndices)for(const old of tri){
+   let ni=vertexMap.get(old);
+   if(ni===undefined){ni=newToOld.length;vertexMap.set(old,ni);newToOld.push(old);}
+   indices.push(ni);
+  }
+  for(const [name,attr] of Object.entries(sourceAttrs)){
+   const arr=new attr.array.constructor(newToOld.length*attr.itemSize);
+   newToOld.forEach((old,i)=>{for(let k=0;k<attr.itemSize;k++)arr[i*attr.itemSize+k]=attr.array[old*attr.itemSize+k];});
+   dst.setAttribute(name,new T.BufferAttribute(arr,attr.itemSize,attr.normalized));
+  }
+  dst.setIndex(indices);dst.computeBoundingBox();dst.computeBoundingSphere();
+  return dst;
+ }
+ function exportSegmentedGLB(){
+  if(!threeScene||!componentRecords.length){alert('請先分析連通部件。');return;}
+  const T=window.__v38three.THREE,root=new T.Group();root.name='Pokemon_Canonical_Weight_Segmented_Components_V40';
+  componentRecords.forEach((c,i)=>{
+   const mat=c.sourceObject.material;
+   const mesh=new T.Mesh(componentGeometry(c),mat);
+   mesh.name=`${c.role||'unassigned'}_${c.meshName}_component_${c.component}`;
+   mesh.position.copy(c.sourceObject.position);mesh.quaternion.copy(c.sourceObject.quaternion);mesh.scale.copy(c.sourceObject.scale);
+   mesh.matrixAutoUpdate=c.sourceObject.matrixAutoUpdate;
+   mesh.userData={role:c.role||'unassigned',sourceMesh:c.meshName,component:c.component,segmentation:c.segmentation||'connected-components',note:'Static geometry export; original skin animation is not preserved.'};
+   root.add(mesh);
+  });
+  // Keep source world placement stable by baking world transforms into geometry.
+  root.updateMatrixWorld(true);
+  const exporter=new window.__v38three.GLTFExporter();
+  exporter.parse(root,result=>{
+   const blob=new Blob([result],{type:'model/gltf-binary'}),a=document.createElement('a');
+   a.href=URL.createObjectURL(blob);a.download=`pokemon_${activeModel?.id||'model'}_segmented_v39.glb`;a.click();
+   setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  },err=>alert('GLB 匯出失敗：'+(err?.message||err)),{binary:true,onlyVisible:true});
+ }
+
+ let skinAnalysis=[];
+ const roleAliases={
+  head:/head|neck|jaw|face|skull|cranium|snout|muzzle|頭|頸|臉|下巴|口鼻/i,
+  body:/root|hips|pelvis|spine|chest|torso|body|abdomen|waist|rib|身體|軀幹|胸|腰|骨盆/i,
+  arms:/arm|hand|wrist|elbow|shoulder|finger|claw|forelimb|手|臂|肩|爪|前肢/i,
+  legs:/leg|foot|feet|toe|knee|ankle|thigh|shin|hindlimb|腳|腿|膝|踝|後肢/i,
+  tail:/tail|尾/i,
+  wings:/wing|feather|翅|翼/i
+ };
+ let canonicalBoneRecords=[];
+ let canonicalProfile=null;
+
+ function inferBoneRole(name){
+  for(const role of roles)if(roleAliases[role].test(name||''))return role;
+  return '';
+ }
+ function boneDepth(bone){
+  let d=0,p=bone;while(p&&d<100){p=p.parent;d++;}return d;
+ }
+ function buildCanonicalBoneMap(){
+  canonicalBoneRecords=[];
+  if(!skinAnalysis.length)return canonicalBoneRecords;
+  const T=window.__v38three.THREE;
+  const all=[];
+  skinAnalysis.forEach((skin,skinIndex)=>{
+   const bones=skin.object.skeleton.bones;
+   const box=new T.Box3().setFromObject(skin.object);
+   const size=box.getSize(new T.Vector3());
+   const safeSize=[size.x||1,size.y||1,size.z||1];
+   bones.forEach((bone,index)=>{
+    const world=new T.Vector3();bone.getWorldPosition(world);
+    const normalized=[
+     (world.x-box.min.x)/safeSize[0],
+     (world.y-box.min.y)/safeSize[1],
+     (world.z-box.min.z)/safeSize[2]
+    ];
+    const parentName=bone.parent?.name||'';
+    const childNames=(bone.children||[]).map(c=>c.name).join(' ');
+    const name=bone.name||`Bone_${index}`;
+    let role=inferBoneRole(name),confidence=role?.65:0,reason=role?'名稱關鍵字':'';
+    if(!role){
+     const contextRole=inferBoneRole(parentName+' '+childNames);
+     if(contextRole){role=contextRole;confidence=.38;reason='父子骨骼名稱上下文';}
+    }
+    // Weak positional hints only for unlabelled bones; never silently treat these as confirmed.
+    if(!role){
+     const [x,y,z]=normalized;
+     if(y>.83){role='head';confidence=.22;reason='位置提示（高處）';}
+     else if(y<.13){role='legs';confidence=.20;reason='位置提示（低處）';}
+     else if(Math.abs(x-.5)>.28&&y>.28&&y<.78){role='arms';confidence=.18;reason='位置提示（側向）';}
+     else if(y>.18&&y<.78){role='body';confidence=.16;reason='位置提示（中央）';}
+    }
+    all.push({skinIndex,meshName:skin.object.name||`SkinnedMesh_${skinIndex}`,bone,index,name,parentName,childNames,depth:boneDepth(bone),position:normalized,role:role||'',suggestedRole:role||'',confidence,reason,weightedVertices:skin.bones[index]?.weightedVertices||0,totalWeight:skin.bones[index]?.totalWeight||0});
+   });
+  });
+  // Group common roles and preserve individual bones: many bones may map to the same canonical role.
+  canonicalBoneRecords=all;
+  canonicalProfile={
+   schema:'pokemon-canonical-skeleton-v1',
+   source:{id:activeModel?.id,name:activeModel?.name,form:activeModel?.form},
+   axisConvention:'normalized GLB local bounding box; x left-right, y bottom-top, z front-back (model dependent)',
+   roles:Object.fromEntries(roles.map(role=>[role,all.filter(b=>b.role===role).map(b=>({bone:b.name,parent:b.parentName,position:b.position,confidence:b.confidence}))])),
+   bones:all.map(b=>({name:b.name,parent:b.parentName,role:b.role,position:b.position,depth:b.depth,confidence:b.confidence}))
+  };
+  return all;
+ }
+ function renderCanonicalBoneMap(){
+  const box=$('canonicalBoneMap');box.style.display='block';
+  if(!canonicalBoneRecords.length){box.innerHTML='尚未建立骨架映射。';return;}
+  const roleOpts='<option value="">未分類</option>'+roles.map(r=>`<option value="${r}">${roleZh[r]}</option>`).join('');
+  box.innerHTML=`<strong>標準骨架映射</strong>｜${canonicalBoneRecords.length} 根骨骼｜同一標準部位可對應多根骨骼
+   <p class="muted">高信心名稱匹配較可靠；父子關係與空間位置只提供低信心提示。請逐項確認。跨寶可夢映射會比較標準部位與正規化位置，不代表骨骼拓樸完全相同。</p>
+   ${canonicalBoneRecords.map((b,i)=>`<div class="boneMapRow"><div><b>${escapeHtml(b.name)}</b><br><span class="confidence">${escapeHtml(b.parentName||'root')} · ${b.reason||'未分類'} · 信心 ${(b.confidence*100).toFixed(0)}% · 權重頂點 ${b.weightedVertices}</span></div><select data-bone-role="${i}">${roleOpts}</select></div>`).join('')}`;
+  box.querySelectorAll('select').forEach(sel=>{
+   const b=canonicalBoneRecords[Number(sel.dataset.boneRole)];sel.value=b.role;
+   sel.addEventListener('change',()=>{
+    b.role=sel.value;b.confidence=sel.value?1:0;b.reason='人工確認';
+    canonicalProfile.roles=Object.fromEntries(roles.map(r=>[r,canonicalBoneRecords.filter(x=>x.role===r).map(x=>({bone:x.name,parent:x.parentName,position:x.position,confidence:x.confidence}))]));
+    canonicalProfile.bones=canonicalBoneRecords.map(x=>({name:x.name,parent:x.parentName,role:x.role,position:x.position,depth:x.depth,confidence:x.confidence}));
+   });
+  });
+ }
+ function applyCanonicalBoneRoles(){
+  if(!skinAnalysis.length){alert('請先執行骨架權重分析。');return;}
+  buildCanonicalBoneMap();renderCanonicalBoneMap();
+  // Replace role hints in skin stats with manually confirmed canonical mapping.
+  skinAnalysis.forEach((skin,si)=>{
+   skin.bones.forEach((stat,index)=>{
+    const rec=canonicalBoneRecords.find(b=>b.skinIndex===si&&b.index===index);
+    stat.role=rec?.role||'';
+   });
+  });
+  $('meshInspectorInfo').textContent='已建立標準骨架映射。請在下方人工確認骨骼角色，再按「依權重分割」。';
+ }
+ function exportCanonicalProfile(){
+  if(!canonicalProfile){alert('請先分析骨架並建立標準映射。');return;}
+  canonicalProfile.source={id:activeModel?.id,name:activeModel?.name,form:activeModel?.form};
+  canonicalProfile.roles=Object.fromEntries(roles.map(r=>[r,canonicalBoneRecords.filter(x=>x.role===r).map(x=>({bone:x.name,parent:x.parentName,position:x.position,confidence:x.confidence}))]));
+  canonicalProfile.bones=canonicalBoneRecords.map(x=>({name:x.name,parent:x.parentName,role:x.role,position:x.position,depth:x.depth,confidence:x.confidence}));
+  const blob=new Blob([JSON.stringify(canonicalProfile,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`pokemon_${activeModel?.id||'model'}_skeleton_DNA_v40.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+ }
+
+ function analyzeSkinning(){
+  skinAnalysis=[];
+  if(!threeScene)return skinAnalysis;
+  threeScene.updateMatrixWorld(true);
+  threeScene.traverse(obj=>{
+   if(!obj.isSkinnedMesh||!obj.skeleton)return;
+   const bones=obj.skeleton.bones||[];
+   const si=obj.geometry?.attributes?.skinIndex;
+   const sw=obj.geometry?.attributes?.skinWeight;
+   if(!si||!sw)return;
+   const stats=bones.map((bone,index)=>({index,name:bone.name||`Bone_${index}`,role:inferBoneRole(bone.name),weightedVertices:0,totalWeight:0,maxWeight:0,weightedFaces:0}));
+   const dominant=new Int16Array(obj.geometry.attributes.position.count);dominant.fill(-1);
+   const dominantStrength=new Float32Array(dominant.length);
+   const vertexRoleWeights=Array.from({length:dominant.length},()=>Object.fromEntries(roles.map(r=>[r,0])));
+   for(let v=0;v<dominant.length;v++){
+    const accum=new Map();
+    for(let k=0;k<si.itemSize;k++){
+     const bi=si.getComponent(v,k),w=sw.getComponent(v,k);
+     if(w>0&&stats[bi]){
+      accum.set(bi,(accum.get(bi)||0)+w);
+      if(stats[bi].role)vertexRoleWeights[v][stats[bi].role]+=w;
+     }
+    }
+    let best=-1,bw=0;
+    for(const [bi,w] of accum){stats[bi].weightedVertices++;stats[bi].totalWeight+=w;stats[bi].maxWeight=Math.max(stats[bi].maxWeight,w);if(w>bw){best=bi;bw=w;}}
+    dominant[v]=best;dominantStrength[v]=bw;
+   }
+   const index=obj.geometry.index?.array;
+   const triCount=Math.floor((index?index.length:dominant.length)/3);
+   const faceRoleTotals=Object.fromEntries(roles.map(r=>[r,0]));
+   const faceByRole=Object.fromEntries(roles.map(r=>[r,[]]));
+   const faceUnassigned=[];
+   for(let t=0;t<triCount;t++){
+    const ids=[0,1,2].map(k=>index?index[t*3+k]:t*3+k);
+    const score=Object.fromEntries(roles.map(r=>[r,0]));
+    for(const v of ids)for(const role of roles)score[role]+=vertexRoleWeights[v][role]/3;
+    const sorted=roles.map(r=>[r,score[r]]).sort((a,b)=>b[1]-a[1]);
+    const [winner,value]=sorted[0],runner=sorted[1]?.[1]||0;
+    // Keep ambiguous seam triangles unassigned rather than force noisy labels.
+    if(value>=0.50&&value-runner>=0.08){faceByRole[winner].push(ids);faceRoleTotals[winner]++;}
+    else faceUnassigned.push(ids);
+   }
+   stats.forEach(s=>{s.weightedFaces=faceRoleTotals[s.role]||0;});
+   skinAnalysis.push({object:obj,bones:stats,dominant,dominantStrength,faceByRole,faceUnassigned,triangles:triCount,vertices:dominant.length});
+  });
+  return skinAnalysis;
+ }
+ function showSkinReport(){
+  const report=$('skinReport');report.style.display='block';
+  if(!skinAnalysis.length){
+   report.innerHTML='<strong>未找到可分析的 SkinnedMesh</strong><br>這個 GLB 可能沒有骨架／skinIndex／skinWeight。這時不能用骨架權重切割，需改走語義幾何分割或外部建模標註。';
+   return;
+  }
+  let totalBones=0,weighted=0,triangles=0;
+  skinAnalysis.forEach(s=>{totalBones+=s.bones.length;weighted+=s.bones.filter(b=>b.weightedVertices>0).length;triangles+=s.triangles;});
+  const rows=skinAnalysis.flatMap(s=>s.bones.map(b=>({mesh:s.object.name||'SkinnedMesh',...b}))).sort((a,b)=>b.weightedVertices-a.weightedVertices);
+  report.innerHTML=`<strong>骨架分析完成</strong>｜${skinAnalysis.length} 個 SkinnedMesh｜${totalBones} 根骨骼｜${weighted} 根有頂點權重｜${triangles.toLocaleString()} 個三角面
+   <p class="muted">分類依骨骼名稱關鍵字推測；沒有標準命名的骨骼會保持未分類。這不是人工確認的解剖結果。</p>
+   ${rows.map(b=>`<div class="skinBoneRow"><div><b>${escapeHtml(b.name)}</b><br><span class="muted">${escapeHtml(b.mesh)} · ${b.weightedVertices.toLocaleString()} 個影響頂點 · 平均權重 ${(b.weightedVertices?b.totalWeight/b.weightedVertices:0).toFixed(3)}</span></div><b>${roleZh[b.role]||'未分類'}</b></div>`).join('')}`;
+ }
+ function buildWeightBasedParts(){
+  if(!skinAnalysis.length){alert('請先執行骨架權重分析。');return;}
+  componentRecords=[];
+  skinAnalysis.forEach((s,si)=>{
+   roles.forEach(role=>{
+    const tris=s.faceByRole[role]||[];
+    if(!tris.length)return;
+    const used=new Set();tris.forEach(t=>t.forEach(v=>used.add(v)));
+    const pos=s.object.geometry.attributes.position;
+    const pts=[...used].map(v=>[pos.getX(v),pos.getY(v),pos.getZ(v)]);
+    const min=[0,1,2].map(k=>Math.min(...pts.map(p=>p[k])));
+    const max=[0,1,2].map(k=>Math.max(...pts.map(p=>p[k])));
+    const center=min.map((v,k)=>(v+max[k])/2),size=min.map((v,k)=>max[k]-v);
+    componentRecords.push({
+     id:`skin_${si}_${role}`,meshName:s.object.name||'SkinnedMesh',path:'骨架權重分割',
+     component:componentRecords.length+1,triangles:tris.length,vertices:used.size,
+     center,size,role,suggestedRole:role,sourceObject:s.object,geometry:s.object.geometry,
+     triangleIndices:tris,materials:(Array.isArray(s.object.material)?s.object.material:[s.object.material]).filter(Boolean).map(m=>m.name||m.type),
+     segmentation:'skin-weight-majority'
+    });
+   });
+   if(s.faceUnassigned.length){
+    const used=new Set();s.faceUnassigned.forEach(t=>t.forEach(v=>used.add(v)));
+    componentRecords.push({
+     id:`skin_${si}_unassigned`,meshName:s.object.name||'SkinnedMesh',path:'骨架權重分割',
+     component:componentRecords.length+1,triangles:s.faceUnassigned.length,vertices:used.size,
+     center:[0,0,0],size:[0,0,0],role:'',suggestedRole:'',sourceObject:s.object,geometry:s.object.geometry,
+     triangleIndices:s.faceUnassigned,materials:[],segmentation:'unassigned'
+    });
+   }
+  });
+  renderComponentRows();updateComponentSummary();
+  $('meshInspectorInfo').textContent='已依頂點權重將三角面分配至骨骼名稱對應的部位。每個面只會分配一次；權重不足或骨骼名稱無法辨識的面會列為未分類。此分割是初步候選，需人工檢查接縫與部位邊界。';
+ }
+
+ let componentRecords=[];
+ function renderComponentRows(){
+  const list=$('meshList');
+  if(!componentRecords.length){list.innerHTML='<p style="padding:10px">沒有找到 Mesh 元件。</p>';return;}
+  list.innerHTML=componentRecords.map((c,i)=>`<div class="meshRow">
+   <div><b>${i+1}. ${escapeHtml(c.meshName)} · 元件 ${c.component}</b>
+   <small>${c.triangles.toLocaleString()} 三角面 · ${c.vertices.toLocaleString()} 頂點<br>中心：${c.center.map(v=>v.toFixed(3)).join(', ')}<br>尺寸：${c.size.map(v=>v.toFixed(3)).join(' × ')}<br>建議：${roleZh[c.suggestedRole]||'未判斷'} · 材質：${escapeHtml(c.materials.join(', '))}</small></div>
+   <select data-component-index="${i}">${roleOptions()}</select>
+  </div>`).join('');
+  list.querySelectorAll('select').forEach(sel=>{const c=componentRecords[Number(sel.dataset.componentIndex)];sel.value=c.role||'';sel.addEventListener('change',()=>{c.role=sel.value;updateComponentSummary();});});
+ }
+ function updateComponentSummary(){
+  const counts=Object.fromEntries(roles.map(r=>[r,componentRecords.filter(c=>c.role===r).length]));
+  $('meshInspectorSummary').textContent=`${activeModel?.name||'模型'}｜${componentRecords.length} 個幾何連通元件｜`+roles.map(r=>`${roleZh[r]} ${counts[r]}`).join(' · ');
+ }
+
+ function renderMeshRows(){
+  const list=$('meshList');
+  if(!meshRecords.length){list.innerHTML='<p style="padding:10px">模型中沒有可列出的 Mesh。</p>';return;}
+  list.innerHTML=meshRecords.map((m,i)=>`<div class="meshRow">
+   <div><b>${i+1}. ${escapeHtml(m.name)}</b><small>節點：${escapeHtml(m.path)}<br>頂點：${m.vertices.toLocaleString()} · 三角面：${m.triangles.toLocaleString()}<br>材質：${escapeHtml(m.materials.join(', ')||'未命名')}</small></div>
+   <select data-mesh-index="${i}" aria-label="指定${m.name}部位">${roleOptions()}</select>
+  </div>`).join('');
+  list.querySelectorAll('select').forEach(sel=>{sel.value=meshRecords[Number(sel.dataset.meshIndex)].role||'';sel.addEventListener('change',()=>{meshRecords[Number(sel.dataset.meshIndex)].role=sel.value;updateMeshSummary();});});
+ }
+ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ function updateMeshSummary(){
+  const counts=Object.fromEntries(roles.map(r=>[r,meshRecords.filter(m=>m.role===r).length]));
+  $('meshInspectorSummary').textContent=`${activeModel?.name||'模型'}｜${meshRecords.length} 個 Mesh｜`+roles.map(r=>`${roleZh[r]} ${counts[r]}`).join(' · ');
+ }
+ async function inspectModel(item){
+  activeModel=item;
+  $('meshInspector').classList.add('show');
+  $('meshInspectorSummary').textContent='正在下載並解析 GLB…';
+  $('meshList').innerHTML='<p style="padding:10px">正在讀取節點、Mesh、材質與幾何資訊…</p>';
+  try{
+   const {loader}=await getThree();
+   const gltf=await new Promise((resolve,reject)=>loader.load(item.url,resolve,undefined,reject));
+   threeScene=gltf.scene;meshRecords=[];
+   threeScene.updateMatrixWorld(true);
+   threeScene.traverse(obj=>{
+    if(!obj.isMesh)return;
+    const geom=obj.geometry;const pos=geom?.attributes?.position;
+    const mats=(Array.isArray(obj.material)?obj.material:[obj.material]).filter(Boolean);
+    const box=new (window.__v38three.THREE.Box3)().setFromObject(obj);
+    const center=box.getCenter(new window.__v38three.THREE.Vector3());
+    const size=box.getSize(new window.__v38three.THREE.Vector3());
+    const path=[];let p=obj;while(p&&p!==threeScene){if(p.name)path.unshift(p.name);p=p.parent;}
+    meshRecords.push({name:obj.name||`Mesh_${meshRecords.length+1}`,path:path.join(' / ')||'(root)',vertices:pos?.count||0,triangles:geom?.index?geom.index.count/3:(pos?.count||0)/3,materials:mats.map(m=>m.name||m.type),center:{x:+center.x.toFixed(4),y:+center.y.toFixed(4),z:+center.z.toFixed(4)},size:{x:+size.x.toFixed(4),y:+size.y.toFixed(4),z:+size.z.toFixed(4)},role:inferRole([obj.name,...path].join(' '))});
+   });
+   renderMeshRows();updateMeshSummary();
+   if(meshRecords.length<=1){
+    $('meshInspectorInfo').textContent='檢查結果：這個 GLB 只有一個可見 Mesh。按「分析連通部件」檢查內部是否包含多個分離表面；若只有一個連通元件，下一步必須分析骨架權重或進行語義幾何切割。';
+   }else{
+    $('meshInspectorInfo').textContent='檢查結果：模型包含多個 Mesh。下一步請按「分析連通部件」，系統會進一步找出每個 Mesh 內部真正分離的三角面島。';
+   }
+  }catch(err){
+   $('meshInspectorSummary').textContent='GLB 解析失敗';
+   $('meshList').innerHTML=`<p style="padding:10px;color:#a33">無法解析此模型：${escapeHtml(err.message||err)}<br>可能是網路、CORS 或 Draco 解碼器載入問題。模型預覽若能顯示，不代表解剖解析也已成功。</p>`;
+  }
+ }
+
+ $('meshConnected').addEventListener('click',()=>{
+  if(!threeScene){alert('請先載入一隻真實 GLB 模型。');return;}
+  $('meshInspectorInfo').textContent='正在依三角面共享頂點關係分析幾何連通元件。注意：若整隻模型是連續封閉表面，演算法只會回報一個元件；不會憑空切出頭、身體或翅膀。';
+  componentRecords=analyzeSceneComponents();
+  componentRecords.forEach(c=>c.role=c.suggestedRole||'');
+  renderComponentRows();updateComponentSummary();
+  const n=componentRecords.length;
+  $('meshInspectorInfo').textContent=`分析完成：找到 ${n} 個幾何連通元件。這些是拓樸上真正分離的片段，不一定等於解剖部位。請人工確認分類；若只找到 1 個元件，代表此模型需要骨架權重分割或語義幾何切割，不能靠連通元件法完成。`;
+ });
+
+ $('meshAnalyzeSkin').addEventListener('click',()=>{
+  if(!threeScene){alert('請先載入一隻真實 GLB 模型。');return;}
+  $('meshInspectorInfo').textContent='正在讀取 SkinnedMesh、骨骼階層、skinIndex 與 skinWeight…';
+  analyzeSkinning();showSkinReport();
+  if(skinAnalysis.length)$('meshInspectorInfo').textContent='骨架權重分析完成。請檢查骨骼名稱是否能對應六大部位；命名不明確的骨骼不會被系統亂猜。';
+ });
+ $('meshWeightParts').addEventListener('click',buildWeightBasedParts);
+ $('meshMapSkeleton').addEventListener('click',applyCanonicalBoneRoles);
+ $('meshExportSkeleton').addEventListener('click',exportCanonicalProfile);
+
+
+ $('meshExportParts').addEventListener('click',exportSegmentedGLB);
+
+ $('meshInspectorClose').addEventListener('click',()=>$('meshInspector').classList.remove('show'));
+ $('meshAutoSuggest').addEventListener('click',()=>{meshRecords.forEach(m=>m.role=inferRole(m.name+' '+m.path));renderMeshRows();updateMeshSummary();});
+ $('meshResetMap').addEventListener('click',()=>{meshRecords.forEach(m=>m.role='');renderMeshRows();updateMeshSummary();});
+ $('meshExportMap').addEventListener('click',()=>{
+  if(!activeModel||!meshRecords.length){alert('請先載入並解析一隻真實模型。');return;}
+  const data={schema:'pokemon-part-map-v4',source:{id:activeModel.id,name:activeModel.name,form:activeModel.form,url:activeModel.url},warning:'Anatomical labels are candidates. Skin-weight segmentation assigns triangles by dominant bone-name role; static GLB export does not preserve original skeleton animation.',parts:Object.fromEntries(roles.map(r=>[r,componentRecords.filter(m=>m.role===r).map(m=>({name:m.meshName,path:m.path,component:m.component,vertices:m.vertices,triangles:m.triangles,center:m.center,size:m.size}))])),unassigned:componentRecords.filter(m=>!m.role).map(m=>({name:m.meshName,path:m.path,component:m.component,vertices:m.vertices,triangles:m.triangles}))};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`pokemon_${activeModel.id}_part_map_v38.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+ });
+
  const roleText={head:'頭部',body:'身體',arms:'手',legs:'腳',tail:'尾巴',wings:'翅膀'};
  const DNA={
   '006':{name:'噴火龍',en:'Charizard',body:'#F68C45',belly:'#FFE0A8',accent:'#E46A3B',head:'#F6A052',wing:'#188C9B',tail:'#ED743C',eye:'#266D91',build:1.02,headR:1.0,snout:1.1,ear:'horn',horn:2,arms:1.0,legs:1.0,wingStyle:'dragon',tailStyle:'flame',shell:false},
@@ -1048,7 +1522,13 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FusionCore;
  const btn=document.createElement('button');
  btn.id='realModelBtn';btn.textContent='🧬 真實模型庫';
  const topRight=document.querySelector('.topRight');
- if(topRight)topRight.insertBefore(btn,topRight.firstChild);
+ if(topRight){
+  topRight.insertBefore(btn,topRight.firstChild);
+  const inspectBtn=document.createElement('button');
+  inspectBtn.id='meshInspectBtn';inspectBtn.textContent='🔬 解剖';
+  inspectBtn.addEventListener('click',()=>{$('meshInspector').classList.add('show');});
+  topRight.insertBefore(inspectBtn,btn.nextSibling);
+ }
  function status(s){hud.textContent=s;hud.classList.add('show');}
  function updateSummary(){
   $('realSelectionSummary').textContent='已選部位：'+roles.map(r=>labels[r]+' '+(roleCodes[r]?.name||'未選')).join(' ｜ ');
@@ -1100,8 +1580,8 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FusionCore;
    viewer.src=item.url;
    stage.classList.add('active');
    originalCanvas.style.visibility='hidden';
-   status('已載入真實模型：'+item.name+'（#'+item.id+'）。目前預覽的是完整來源模型，尚未進行部位切割。');
-   updateSummary();close();
+   status('已載入真實模型：'+item.name+'（#'+item.id+'）。正在檢查 GLB 內部 Mesh 結構。');
+   updateSummary();close();inspectModel(item);
   }));
  }
  $('realSearch').addEventListener('input',draw);
@@ -1110,6 +1590,25 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FusionCore;
  window.__realGLBV36={roles:()=>({...roleCodes}),open,loadCatalog};
 })();
 </script>
+
+<div id="meshInspector">
+ <div id="meshInspectorCard">
+  <div id="meshInspectorHead">
+   <h2>🔬 真實 GLB 解剖檢查</h2>
+   <button class="meshAction secondary" id="meshInspectorClose">關閉</button>
+  </div>
+  <div id="meshInspectorInfo">
+   這一版先讀取 GLB 內真正存在的節點與 Mesh，不會憑外觀猜切割線。你可以把每個獨立 Mesh 指派到六大部位並匯出對照表。若來源模型只有一個整體 Mesh，代表素材本身沒有提供可直接分離的部位；這時需要進一步做幾何分割或骨架／頂點權重解析，不能把整隻模型當成某個部位。
+  </div>
+  <div id="meshInspectorSummary">尚未載入模型</div>
+  <div id="skinReport" class="skinReport" style="display:none"></div><div id="canonicalBoneMap" class="skinReport" style="display:none"></div><div id="meshList"><p style="padding:10px;color:#8f7d91">請先從真實模型庫選擇一隻寶可夢。</p></div>
+  <div id="meshInspectorFoot">
+   <div class="left"><button class="meshAction secondary" id="meshAutoSuggest">依節點名稱建議分類</button><button class="meshAction secondary" id="meshConnected">分析連通部件</button><button class="meshAction secondary" id="meshAnalyzeSkin">骨架權重分析</button><button class="meshAction secondary" id="meshMapSkeleton">標準骨架映射</button><button class="meshAction secondary" id="meshWeightParts">依權重分割</button><button class="meshAction secondary" id="meshExportSkeleton">匯出骨架 DNA</button><button class="meshAction secondary" id="meshResetMap">清除分類</button></div>
+   <div class="right"><button class="meshAction secondary" id="meshExportParts">匯出分件 GLB</button><button class="meshAction" id="meshExportMap">匯出部位對照 JSON</button></div>
+  </div>
+ </div>
+</div>
+
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","spa":2}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","spa":2}' crossorigin="anonymous"></script>
 </body></html>
