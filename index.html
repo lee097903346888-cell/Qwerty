@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#f6edf5">
-<title>寶可夢自由拼裝工坊 V40</title>
+<title>寶可夢自由拼裝工坊 V45</title>
 <style>
 :root{--ink:#4c3e50;--muted:#8f7d91;--line:#eadceb;--plum:#77577e;--paper:#fffdf6;--pink:#fff1fb;--shadow:0 12px 35px #755c8250}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
@@ -144,7 +144,7 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 <body>
 <canvas id="gameCanvas" aria-label="3D DNA 融合模型。拖曳可旋轉視角，雙指縮放。"></canvas>
 <header class="top">
- <div class="brand"><div class="brandIcon">🧬</div><div><h1>寶可夢自由拼裝工坊</h1><small>V40 · CANONICAL SKELETON MAPPER</small></div></div>
+ <div class="brand"><div class="brandIcon">🧬</div><div><h1>寶可夢自由拼裝工坊</h1><small>V45 · DNA RECIPE WORKBENCH</small></div></div>
  <div class="topRight"><button class="statusBtn" id="fusionStatus" disabled>生成中</button><button id="albumBtn">🃏 圖冊</button><button id="gearBtn" aria-label="設定">⚙</button><button id="clearBtn">清空</button></div>
 </header>
 <div id="status" role="status">準備 3D 引擎…</div>
@@ -176,7 +176,7 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
  <div class="modalActions"><button id="saveCard">收藏這隻新模型</button><button class="secondary" onclick="document.getElementById('albumModal').classList.remove('show');document.getElementById('gearBtn').click()">匯出 GLB</button></div>
 </div></div>
 <script>
-/* V40 canonical bone-role mapping, confidence scoring and cross-model skeleton profile prototype. */
+/* V45 DNA recipe save/load, GLB export, and integrated pipeline. */
 const FusionCore = (() => {
  'use strict';
 
@@ -1587,7 +1587,7 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FusionCore;
  $('realSearch').addEventListener('input',draw);
  // Start with a real catalog load; don't falsely relabel procedural output as genuine assets.
  updateSummary();loadCatalog();
- window.__realGLBV36={roles:()=>({...roleCodes}),open,loadCatalog};
+ window.__realGLBV36={roles:()=>({...roleCodes}),setRoles:(v)=>{for(const r of Object.keys(roleCodes))roleCodes[r]=v[r]||null;updateSummary();},open,loadCatalog};
 })();
 </script>
 
@@ -1609,6 +1609,276 @@ if(typeof module!=='undefined'&&module.exports)module.exports=FusionCore;
  </div>
 </div>
 
+
+<style>
+#dnaWorkbench{position:fixed;z-index:45;right:14px;bottom:115px;width:min(370px,calc(100vw - 28px));max-height:68dvh;overflow:auto;background:#fffdf6f2;border:2px solid #fff;border-radius:18px;box-shadow:0 12px 36px #24152d33;padding:12px;color:#514455;font:12px/1.45 system-ui;display:none}
+#dnaWorkbench.show{display:block}
+#dnaWorkbench h3{margin:0 0 8px;font-size:15px;color:#77577e}
+#dnaWorkbench .dnaRow{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0}
+#dnaWorkbench button,#dnaWorkbench label.dnaFile{border:0;border-radius:10px;padding:8px 10px;background:#77577e;color:white;font-weight:800;font-size:11px;cursor:pointer}
+#dnaWorkbench button.alt,#dnaWorkbench label.dnaFile{background:#f0e5f1;color:#77577e}
+#dnaWorkbench button:disabled{opacity:.45;cursor:not-allowed}
+#dnaWorkbench pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f8f1f8;border-radius:10px;padding:8px;max-height:160px;overflow:auto;font-size:10px}
+#dnaWorkbench .dnaParts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+#dnaWorkbench .dnaParts span{background:#f5edf5;border-radius:8px;padding:5px}
+#dnaWorkbench input[type=file]{display:none}
+#dnaWorkbench .dnaStatus{font-size:11px;color:#816f84;margin:6px 0}
+#dnaWorkbench .dnaTitle{display:flex;justify-content:space-between;align-items:center;gap:6px}
+</style>
+<div id="dnaWorkbench">
+ <div class="dnaTitle"><h3>🧬 V45 DNA 核心工作台</h3><button id="dnaClose" class="alt">收起</button></div>
+ <div class="dnaStatus" id="dnaStatus">等待選擇真實寶可夢部位來源。</div>
+ <div class="dnaParts" id="dnaParts"></div>
+ <div class="dnaRow">
+  <button id="dnaCompare" class="alt">V41 骨架比較</button>
+  <button id="dnaExtract" class="alt">V42 真實部位提取</button>
+  <button id="dnaAssemble">V43 組合模型</button>
+ </div>
+ <div class="dnaRow">
+  <button id="dnaFuse" class="alt">V44 表面布林融合</button>
+  <button id="dnaExport">匯出 GLB</button>
+ </div>
+ <div class="dnaRow">
+  <button id="dnaSave" class="alt">保存 DNA 配方</button>
+  <label class="dnaFile" for="dnaLoadFile">載入 DNA 配方</label><input id="dnaLoadFile" type="file" accept=".json,application/json">
+ </div>
+ <pre id="dnaReport">V41–V45 核心模組載入中…</pre>
+</div>
+
+
+<script type="module">
+(()=>{
+ const roles=['head','body','arms','legs','tail','wings'];
+ const roleZh={head:'頭部',body:'身體',arms:'手',legs:'腳',tail:'尾巴',wings:'翅膀'};
+ const aliases={
+  head:/head|neck|jaw|face|skull|cranium|snout|muzzle/i,
+  body:/root|hips|pelvis|spine|chest|torso|body|abdomen|waist|rib/i,
+  arms:/arm|hand|wrist|elbow|shoulder|finger|claw|forelimb/i,
+  legs:/leg|foot|feet|toe|knee|ankle|thigh|shin|hindlimb/i,
+  tail:/tail/i,wings:/wing|feather/i
+ };
+ const $=id=>document.getElementById(id);
+ const state={THREE:null,loader:null,Exporter:null,selected:{},profiles:[],parts:[],assembled:null,fused:null,report:[]};
+ function say(msg){$('dnaStatus').textContent=msg;state.report.push(msg);if(state.report.length>20)state.report.shift();$('dnaReport').textContent=state.report.slice(-8).join('\n');}
+ function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ async function init(){
+  const T=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js');
+  const {GLTFLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js');
+  const {DRACOLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/DRACOLoader.js');
+  const {GLTFExporter}=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/exporters/GLTFExporter.js');
+  const draco=new DRACOLoader();draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+  const loader=new GLTFLoader();loader.setDRACOLoader(draco);
+  state.THREE=T;state.loader=loader;state.Exporter=GLTFExporter;
+  say('V41–V45 引擎已載入。請先在原有六大部位選單指定來源。');
+  refresh();
+ }
+ function getSelection(){
+  try{return window.__realGLBV36?.roles?.()||{};}catch{return {};}
+ }
+ function refresh(){
+  const sel=getSelection();state.selected=sel;
+  $('dnaParts').innerHTML=roles.map(r=>`<span><b>${roleZh[r]}</b><br>${sel[r]?`#${sel[r].id} ${escape(sel[r].name)}`:'尚未選擇'}</span>`).join('');
+ }
+ async function loadModel(item){
+  const gltf=await new Promise((resolve,reject)=>state.loader.load(item.url,resolve,undefined,reject));
+  const root=gltf.scene;root.updateMatrixWorld(true);
+  const box=new state.THREE.Box3().setFromObject(root);
+  const size=box.getSize(new state.THREE.Vector3());
+  return {item,gltf,root,box,size};
+ }
+ function normalizeBoneName(n){return String(n||'').toLowerCase().replace(/[^a-z0-9\u3400-\u9fff]/g,'');}
+ function roleForBone(n){
+  const name=normalizeBoneName(n);
+  for(const r of roles)if(aliases[r].test(name))return r;
+  return '';
+ }
+ function skeletonSignature(model){
+  const rows=[];
+  model.root.traverse(o=>{
+   if(!o.isSkinnedMesh||!o.skeleton)return;
+   const bones=o.skeleton.bones;
+   const names=bones.map((b,i)=>({name:b.name||`Bone_${i}`,parent:b.parent?.name||'',role:roleForBone(b.name)}));
+   rows.push({mesh:o.name||'SkinnedMesh',boneCount:bones.length,bones:names});
+  });
+  return rows;
+ }
+ async function compareSkeletons(){
+  refresh();const sel=state.selected;const unique=[...new Map(Object.values(sel).filter(Boolean).map(x=>[x.id,x])).values()];
+  if(!unique.length){say('請先選擇至少一隻寶可夢。');return;}
+  say(`開始比較 ${unique.length} 隻真實模型的骨架…`);
+  const profiles=[];
+  for(const item of unique){
+   const m=await loadModel(item);const bones=skeletonSignature(m);
+   profiles.push({id:item.id,name:item.name,form:item.form,bounds:{min:m.box.min.toArray(),max:m.box.max.toArray(),size:m.size.toArray()},skeleton:bones});
+  }
+  state.profiles=profiles;
+  const roleCounts=Object.fromEntries(roles.map(r=>[r,profiles.map(p=>p.skeleton.flatMap(s=>s.bones).filter(b=>b.role===r).length)]));
+  const report=profiles.map(p=>`${p.name} (#${p.id}): ${p.skeleton.length} 個 SkinnedMesh，${p.skeleton.reduce((n,s)=>n+s.boneCount,0)} 根骨骼`).join('\n');
+  say('骨架比較完成（只對明確命名的骨骼做語意對應）：\n'+report+'\n六大角色骨骼數：'+JSON.stringify(roleCounts));
+ }
+ function getVertexBindPosition(mesh,index,target){
+  const T=state.THREE;target.set(0,0,0);
+  if(typeof mesh.getVertexPosition==='function')mesh.getVertexPosition(index,target);
+  else target.fromBufferAttribute(mesh.geometry.attributes.position,index);
+  return target.applyMatrix4(mesh.matrixWorld);
+ }
+ async function extractParts(){
+  refresh();const sel=state.selected;
+  const missing=roles.filter(r=>!sel[r]);
+  if(missing.length){say('尚未指定：'+missing.map(r=>roleZh[r]).join('、')+'。可以先選擇部分部位，但不會自行補造缺失部位。');}
+  const T=state.THREE;const extracted=[];
+  for(const role of roles){
+   const item=sel[role];if(!item)continue;
+   say(`正在解析 ${item.name} 的${roleZh[role]}…`);
+   const model=await loadModel(item);let found=0;
+   model.root.traverse(mesh=>{
+    if(!mesh.isSkinnedMesh||!mesh.skeleton)return;
+    const g=mesh.geometry,si=g.attributes.skinIndex,sw=g.attributes.skinWeight,pos=g.attributes.position;
+    if(!si||!sw||!pos)return;
+    const boneRoles=mesh.skeleton.bones.map(b=>roleForBone(b.name));
+    const tri=g.index?g.index.array:null,triCount=Math.floor((tri?tri.length:pos.count)/3);
+    const selectedFaces=[];
+    for(let t=0;t<triCount;t++){
+     const ids=[0,1,2].map(k=>tri?tri[t*3+k]:t*3+k);
+     let score=0;
+     for(const v of ids){
+      let vertexScore=0;
+      for(let k=0;k<si.itemSize;k++){
+       const bi=si.getComponent(v,k),w=sw.getComponent(v,k);
+       if(boneRoles[bi]===role)vertexScore+=w;
+      }
+      score+=vertexScore/3;
+     }
+     // Strict threshold avoids assigning ambiguous seams to arbitrary body parts.
+     if(score>=0.52)selectedFaces.push(ids);
+    }
+    if(!selectedFaces.length)return;
+    const vertexMap=new Map(),oldVertices=[],indices=[];
+    for(const face of selectedFaces)for(const old of face){
+     let ni=vertexMap.get(old);if(ni===undefined){ni=oldVertices.length;vertexMap.set(old,ni);oldVertices.push(old);}
+     indices.push(ni);
+    }
+    const out=new T.BufferGeometry();
+    for(const [name,attr] of Object.entries(g.attributes)){
+     if(name==='skinIndex'||name==='skinWeight')continue;
+     const arr=new attr.array.constructor(oldVertices.length*attr.itemSize);
+     oldVertices.forEach((old,i)=>{for(let k=0;k<attr.itemSize;k++)arr[i*attr.itemSize+k]=attr.array[old*attr.itemSize+k];});
+     out.setAttribute(name,new T.BufferAttribute(arr,attr.itemSize,attr.normalized));
+    }
+    const pArr=new Float32Array(oldVertices.length*3),v=new T.Vector3();
+    oldVertices.forEach((old,i)=>{getVertexBindPosition(mesh,old,v);pArr.set(v.toArray(),i*3);});
+    out.setAttribute('position',new T.BufferAttribute(pArr,3));
+    out.setIndex(indices);out.computeVertexNormals();out.computeBoundingBox();out.computeBoundingSphere();
+    const scale=2/Math.max(model.size.x,model.size.y,model.size.z,1e-6);
+    const center=model.box.getCenter(new T.Vector3());
+    const matrix=new T.Matrix4().makeScale(scale,scale,scale);
+    const offset=new T.Matrix4().makeTranslation(-center.x,-center.y,-center.z);
+    matrix.multiply(offset);out.applyMatrix4(matrix);
+    const material=Array.isArray(mesh.material)?mesh.material[0]:mesh.material;
+    extracted.push({role,item,geometry:out,material:material?.clone?.()||new T.MeshStandardMaterial({color:0x999999}),meshName:mesh.name||'SkinnedMesh',faces:selectedFaces.length,vertices:oldVertices.length,sourceBounds:{center:model.box.getCenter(new T.Vector3()).toArray(),size:model.size.toArray()}});
+    found++;
+   });
+   if(!found)say(`${item.name} 找不到可依骨架名稱辨識的 ${roleZh[role]} 網格；此部位保留未提取，不用假模型代替。`);
+  }
+  state.parts.forEach(p=>p.geometry.dispose());state.parts=extracted;
+  say(`真實部位提取完成：${extracted.length}/${roles.filter(r=>sel[r]).length} 個來源成功。每件仍是原模型表面子集，尚未完成封口或融合。`);
+  $('dnaReport').textContent=state.report.slice(-8).join('\n')+'\n'+extracted.map(p=>`${roleZh[p.role]} ← ${p.item.name}：${p.faces} 面`).join('\n');
+ }
+ function assemble(){
+  if(!state.parts.length){say('請先執行 V42 真實部位提取。');return;}
+  const T=state.THREE,root=new T.Group();root.name='Pokemon_DNA_Composite_V43';
+  state.parts.forEach(p=>{
+   const mesh=new T.Mesh(p.geometry.clone(),p.material.clone());mesh.name=`${p.role}_${p.item.id}`;
+   mesh.userData={role:p.role,sourcePokemon:p.item.name,sourceId:p.item.id,faces:p.faces};
+   root.add(mesh);
+  });
+  state.assembled=root;
+  say(`V43 已組成 ${state.parts.length} 個真實來源部位的組合模型。這是經標準化座標對齊的多網格組合，並非表面已焊接的單一網格。`);
+  showAssembly();
+ }
+ function showAssembly(){
+  if(!state.assembled)return;
+  const viewer=document.getElementById('realModelViewer');
+  if(!viewer)return;
+  const T=state.THREE,scene=new T.Scene();scene.add(state.assembled.clone(true));
+  const exporter=new state.Exporter();
+  exporter.parse(scene,result=>{
+   const blob=new Blob([result],{type:'model/gltf-binary'}),url=URL.createObjectURL(blob);
+   viewer.src=url;document.getElementById('realModelStage')?.classList.add('active');
+   const canvas=document.getElementById('gameCanvas');if(canvas)canvas.style.visibility='hidden';
+   say('組合模型已送入 3D 預覽。');
+  },err=>say('預覽 GLB 產生失敗：'+(err?.message||err)),{binary:true,onlyVisible:true});
+ }
+ async function fuse(){
+  if(!state.assembled){say('請先執行 V43 組合模型。');return;}
+  try{
+   const {Brush,Evaluator,ADDITION}=await import('https://cdn.jsdelivr.net/npm/three-bvh-csg@0.0.17/build/index.module.js');
+   const T=state.THREE,meshes=[];state.assembled.updateMatrixWorld(true);
+   state.assembled.traverse(o=>{if(o.isMesh)meshes.push(o);});
+   if(meshes.length<2){say('只有一個部位，無需布林聯集。');return;}
+   const evaluator=new Evaluator();let result=new Brush(meshes[0].geometry.clone(),meshes[0].material.clone());
+   result.updateMatrixWorld(true);
+   for(let i=1;i<meshes.length;i++){
+    const next=new Brush(meshes[i].geometry.clone(),meshes[i].material.clone());next.updateMatrixWorld(true);
+    result=evaluator.evaluate(result,next,ADDITION);
+   }
+   state.fused=result;
+   const root=new T.Group();root.name='Pokemon_DNA_Boolean_Union_V44';root.add(result);
+   state.assembled=root;showAssembly();
+   say('V44 布林聯集已完成。請檢查薄片、相交及開放邊；CSG 結果不保證在所有非流形來源上成功。');
+  }catch(err){say('V44 布林融合未完成：'+(err?.message||err)+'。常見原因是來源部位不是封閉實體或彼此沒有相交。原始組合模型仍保留。');}
+ }
+ function dnaObject(){
+  return {schema:'pokemon-dna-recipe-v1',version:45,createdAt:new Date().toISOString(),parts:Object.fromEntries(roles.map(r=>[r,state.selected[r]?{id:state.selected[r].id,name:state.selected[r].name,form:state.selected[r].form,url:state.selected[r].url}:null])),notes:'Recipe stores source asset references. It does not embed copyrighted GLB files.'};
+ }
+ function saveDNA(){
+  const data=dnaObject(),blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='pokemon_DNA_recipe_v45.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1200);
+  say('DNA 配方 JSON 已匯出。');
+ }
+ async function loadDNA(file){
+  try{
+   const data=JSON.parse(await file.text());if(data.schema!=='pokemon-dna-recipe-v1'||!data.parts)throw new Error('不是支援的 DNA 配方格式');
+   const current=getSelection();
+   for(const role of roles){const item=data.parts[role];if(item)current[role]=item;}
+   // V36 selection store is private; expose an explicit setter through the picker bridge if available.
+   if(window.__realGLBV36?.setRoles)window.__realGLBV36.setRoles(current);
+   else throw new Error('目前版本沒有配方回填介面；請使用匯出的來源清單手動選取。');
+   refresh();say('DNA 配方已載入並回填部位來源。');
+  }catch(err){say('DNA 載入失敗：'+(err?.message||err));}
+ }
+ $('dnaCompare').addEventListener('click',compareSkeletons);
+ $('dnaExtract').addEventListener('click',extractParts);
+ $('dnaAssemble').addEventListener('click',assemble);
+ $('dnaFuse').addEventListener('click',fuse);
+ $('dnaExport').addEventListener('click',()=>{
+  if(!state.assembled){say('尚未生成模型。');return;}
+  const exporter=new state.Exporter();exporter.parse(state.assembled,result=>{
+   const blob=new Blob([result],{type:'model/gltf-binary'}),a=document.createElement('a');
+   a.href=URL.createObjectURL(blob);a.download='pokemon_DNA_fusion_v45.glb';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1200);
+  },err=>say('GLB 匯出失敗：'+(err?.message||err)),{binary:true,onlyVisible:true});
+ });
+ $('dnaSave').addEventListener('click',saveDNA);
+ $('dnaLoadFile').addEventListener('change',e=>{if(e.target.files?.[0])loadDNA(e.target.files[0]);});
+ $('dnaClose').addEventListener('click',()=>$('dnaWorkbench').classList.remove('show'));
+ const launch=document.createElement('button');launch.textContent='🧬 DNA 工作台';launch.style.cssText='position:fixed;z-index:46;right:14px;bottom:72px;border:0;border-radius:13px;padding:10px 13px;background:#77577e;color:white;font-weight:900;box-shadow:0 8px 22px #24152d33';
+ launch.addEventListener('click',()=>{$('dnaWorkbench').classList.toggle('show');refresh();});
+ document.body.appendChild(launch);
+ init().catch(e=>say('核心模組載入失敗：'+(e.message||e)));
+})();
+</script>
+
+
+<script>
+(()=>{
+ const allowed=new Set(['dnaCompare','dnaExtract','dnaAssemble','dnaFuse','dnaExport','dnaSave','dnaLoadFile']);
+ ['dnaCompare','dnaExtract','dnaAssemble','dnaFuse','dnaExport','dnaSave','dnaLoadFile'].forEach(id=>{
+  const el=document.getElementById(id);if(el&&!allowed.has(id))el.disabled=true;
+ });
+ const report=document.getElementById('dnaReport');
+ if(report)report.textContent='V45 DNA recipe save/load, GLB export, and integrated pipeline.';
+})();
+</script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","spa":2}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","spa":2}' crossorigin="anonymous"></script>
 </body></html>
