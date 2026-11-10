@@ -73,6 +73,7 @@ header{position:fixed;z-index:3;top:calc(env(safe-area-inset-top) + 12px);left:1
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 
 const $=id=>document.getElementById(id);
@@ -103,6 +104,10 @@ const rim=new THREE.Mesh(new THREE.TorusGeometry(1.82,.035,12,96),new THREE.Mesh
 rim.rotation.x=Math.PI/2;rim.position.y=.12;platform.add(rim);scene.add(platform);
 
 const loader=new GLTFLoader();
+const dracoLoader=new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+dracoLoader.setDecoderConfig({type:'js'});
+loader.setDRACOLoader(dracoLoader);
 let catalog=[],filtered=[],targetSlot='A',selected={A:null,B:null},currentFusion=null,loading=false,toastTimer;
 function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600);}
 function status(message){$('status').textContent=message;}
@@ -196,7 +201,7 @@ async function fuse(){
   toast('融合預覽已完成，可以旋轉及縮放欣賞');
  }catch(err){
   console.error(err);status('模型載入失敗，請重新選擇或稍後再試');
-  toast('模型載入失敗：'+(err?.message||'請檢查網路'));
+  toast('模型載入失敗：'+(err?.message||'請檢查網路或模型格式'));
  }finally{loading=false;updateButtons();}
 }
 function disposeGroup(group){
