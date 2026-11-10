@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#f5edf5">
-<title>寶可夢自由融合工坊 V51</title>
+<title>寶可夢自由融合工坊 V52</title>
 <script type="importmap">
 {
   "imports": {
@@ -53,7 +53,7 @@ header{position:fixed;z-index:3;top:calc(env(safe-area-inset-top) + 12px);left:1
 <body>
 <canvas id="stage" aria-label="可旋轉縮放的寶可夢融合 3D 展示"></canvas>
 <header>
- <div class="brand"><div class="brandIcon">🧬</div><div><strong>寶可夢自由融合工坊</strong><small>V51 · SIMPLE FUSION VIEWER</small></div></div>
+ <div class="brand"><div class="brandIcon">🧬</div><div><strong>寶可夢自由融合工坊</strong><small>V52 · MODEL GEOMETRY MERGE</small></div></div>
  <div class="status" id="status">正在載入寶可夢圖鑑…</div>
 </header>
 <button id="viewReset" aria-label="重設視角" title="重設視角">↺</button>
@@ -154,16 +154,62 @@ async function loadCatalog(){
   console.error(err);
  }
 }
-function cloneWithClip(root,plane){
- const copy=root.clone(true);
- copy.traverse(obj=>{
-  if(!obj.isMesh)return;
-  const mats=Array.isArray(obj.material)?obj.material: [obj.material];
-  const cloned=mats.map(mat=>{const m=mat.clone();m.clippingPlanes=[plane];m.clipShadows=true;return m;});
-  obj.material=Array.isArray(obj.material)?cloned:cloned[0];
-  obj.castShadow=true;obj.receiveShadow=true;
- });
- return copy;
+function mergePokemonGeometry(rootA,rootB){
+ // Bake both GLB scene graphs into one shared coordinate space and one BufferGeometry.
+ // Material groups preserve each source mesh's original material/texture.
+ const roots=[rootA,rootB];
+ const positions=[],normals=[],uvs=[],groups=[],materials=[];
+ let vertexOffset=0;
+ for(let sourceIndex=0;sourceIndex<roots.length;sourceIndex++){
+  const root=roots[sourceIndex];
+  root.updateMatrixWorld(true);
+  const inverseRoot=root.matrixWorld.clone().invert();
+  root.traverse(obj=>{
+   if(!obj.isMesh||!obj.geometry?.attributes?.position)return;
+   let sourceGeometry=obj.geometry;
+   const geometry=sourceGeometry.index?sourceGeometry.toNonIndexed():sourceGeometry.clone();
+   const pos=geometry.getAttribute('position');
+   const normal=geometry.getAttribute('normal');
+   const uv=geometry.getAttribute('uv');
+   const transform=inverseRoot.clone().multiply(obj.matrixWorld);
+   const normalTransform=new THREE.Matrix3().getNormalMatrix(transform);
+   const v=new THREE.Vector3(),n=new THREE.Vector3();
+   const firstVertex=vertexOffset;
+   for(let i=0;i<pos.count;i++){
+    v.fromBufferAttribute(pos,i).applyMatrix4(transform);
+    positions.push(v.x,v.y,v.z);
+    if(normal){
+     n.fromBufferAttribute(normal,i).applyMatrix3(normalTransform).normalize();
+     normals.push(n.x,n.y,n.z);
+    }else normals.push(0,1,0);
+    if(uv){uvs.push(uv.getX(i),uv.getY(i));}
+    else uvs.push(0,0);
+   }
+   const sourceMaterials=Array.isArray(obj.material)?obj.material:[obj.material];
+   const materialStart=materials.length;
+   for(const mat of sourceMaterials)materials.push(mat.clone());
+   if(geometry.groups?.length&&Array.isArray(obj.material)){
+    for(const group of geometry.groups){
+     groups.push({start:firstVertex+group.start,count:group.count,materialIndex:materialStart+Math.min(group.materialIndex,sourceMaterials.length-1)});
+    }
+   }else{
+    groups.push({start:firstVertex,count:pos.count,materialIndex:materialStart});
+   }
+   vertexOffset+=pos.count;
+   if(geometry!==sourceGeometry)geometry.dispose();
+  });
+ }
+ if(!positions.length)throw new Error('模型沒有可合併的三角網格');
+ const merged=new THREE.BufferGeometry();
+ merged.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ merged.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
+ merged.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+ for(const g of groups)merged.addGroup(g.start,g.count,g.materialIndex);
+ merged.computeBoundingBox();merged.computeBoundingSphere();
+ const result=new THREE.Mesh(merged,materials);
+ result.name='PokemonFusion_MergedGeometry';
+ result.castShadow=true;result.receiveShadow=true;
+ return result;
 }
 function normalizeRoot(root){
  root.updateMatrixWorld(true);
@@ -188,17 +234,14 @@ async function fuse(){
  try{
   const [modelA,modelB]=await Promise.all([loadModel(selected.A),loadModel(selected.B)]);
   if(currentFusion){scene.remove(currentFusion);disposeGroup(currentFusion);}
-  const combined=new THREE.Group();combined.name='PokemonFusionPreview';
-  const leftPlane=new THREE.Plane(new THREE.Vector3(1,0,0),0);
-  const rightPlane=new THREE.Plane(new THREE.Vector3(-1,0,0),0);
-  combined.add(cloneWithClip(modelA,leftPlane));
-  combined.add(cloneWithClip(modelB,rightPlane));
+  const combined=new THREE.Group();combined.name='PokemonFusion_DataMerged';
+  const mergedMesh=mergePokemonGeometry(modelA,modelB);
+  combined.add(mergedMesh);
   combined.position.y=1.28;
   scene.add(combined);currentFusion=combined;
-  // Show a single centered hybrid preview, with one Pokémon contributing the left half and the other the right half.
   camera.position.set(0,1.55,6.4);controls.target.set(0,1.25,0);controls.update();
-  status('融合完成 · '+selected.A.name+' × '+selected.B.name);
-  toast('融合預覽已完成，可以旋轉及縮放欣賞');
+  status('模型資料已合併 · '+selected.A.name+' × '+selected.B.name);
+  toast('已將兩份模型網格合併為單一 3D Mesh，可旋轉及縮放欣賞');
  }catch(err){
   console.error(err);status('模型載入失敗，請重新選擇或稍後再試');
   toast('模型載入失敗：'+(err?.message||'請檢查網路或模型格式'));
