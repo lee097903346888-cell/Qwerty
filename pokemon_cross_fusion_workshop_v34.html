@@ -1,0 +1,1943 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#f6edf5">
+<title>寶可夢自由拼裝工坊 V34</title>
+<style>
+:root{--ink:#403746;--muted:#897b8c;--line:#eadfea;--plum:#70557a;--paper:#fffdf5}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;color:var(--ink);background:#f4ebf4}
+#stage{position:fixed;inset:0;touch-action:none}canvas{display:block;width:100%;height:100%;touch-action:none}
+.top{position:fixed;z-index:4;top:calc(env(safe-area-inset-top) + 8px);left:9px;right:9px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
+.brand,.topRight{pointer-events:auto}.brand{display:flex;align-items:center;gap:7px;background:#fffdf2ed;border:1px solid white;border-radius:13px;padding:6px 9px;box-shadow:0 4px 16px #59445f1c}
+.logo{width:28px;height:28px;border-radius:9px;background:#ead9ef;display:grid;place-items:center;font-size:16px}.brand b{display:block;font-size:11px}.brand small{font-size:8px;color:var(--muted)}
+.topRight{display:flex;gap:5px}.topRight button{border:1px solid white;border-radius:11px;background:#fffdf2ed;padding:8px 9px;font-size:10px;font-weight:800;color:var(--ink);box-shadow:0 4px 16px #59445f1c}#fuseBtn{background:#73577d;color:white}
+#hint{position:fixed;z-index:2;top:58px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#fffdf0df;border:1px solid white;border-radius:99px;padding:6px 9px;font-size:9px;color:#786b7b;pointer-events:none}
+#toast{position:fixed;z-index:10;left:50%;bottom:calc(82px + env(safe-area-inset-bottom));transform:translate(-50%,8px);opacity:0;background:#55445b;color:white;padding:8px 12px;border-radius:99px;font-size:10px;white-space:nowrap;transition:.18s;pointer-events:none}#toast.show{opacity:1;transform:translate(-50%,0)}
+#bottomBar{position:fixed;z-index:5;left:7px;right:7px;bottom:calc(7px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:4px;padding:6px;background:#fffdf4ed;border:1px solid white;border-radius:17px;box-shadow:0 7px 22px #59445f24;backdrop-filter:blur(10px)}
+.cat{width:clamp(38px,10.7vw,51px);height:47px;border:1px solid #eee3ef;border-radius:11px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:#65566c;padding:2px;flex:none}
+.cat .ico{font-size:18px;line-height:19px}.cat small{font-size:8px;font-weight:800}.cat.active{background:#73577d;color:white;border-color:#73577d}
+#shelf{position:fixed;z-index:7;left:7px;top:65px;bottom:calc(69px + env(safe-area-inset-bottom));width:min(218px,54vw);display:none;flex-direction:column;background:#fffdf6f5;border:1px solid white;border-radius:16px;padding:8px;box-shadow:0 8px 25px #59445f2b;backdrop-filter:blur(12px)}
+#shelf.open{display:flex}#splitCatalog,#wholeList,#partChoices{display:flex!important;flex-direction:column!important;grid-template-columns:1fr!important}
+.shelfHead{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:6px}.shelfHead b{font-size:10px}.shelfHead button{border:0;border-radius:8px;background:#f1e8f2;padding:5px 8px;font-size:11px;color:#6e5875}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px}.tab{border:1px solid #eadfea;background:white;border-radius:9px;padding:7px 3px;font-size:9px;font-weight:800;color:#6a5a70}.tab.active{background:#73577d;color:white;border-color:#73577d}
+#splitPane,#wholePane{display:none;flex:1;min-height:0;flex-direction:column}#splitPane.active,#wholePane.active{display:flex}
+.subnote{font-size:8px;color:var(--muted);line-height:1.4;margin:0 0 6px}
+ .extractBtn{border:0;border-radius:10px;background:#73577d;color:white;padding:9px 8px;font-size:9px;font-weight:800;margin:2px 0 6px}.extractBtn:disabled{opacity:.42}
+.extractStatus{font-size:8px;color:var(--muted);margin:0 0 6px;line-height:1.35}
+#partChoices,#wholeList,#splitCatalog{overflow-y:auto;overflow-x:hidden;display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;gap:6px;align-content:stretch;scrollbar-width:thin;padding:2px 2px 8px;width:100%;min-width:0}
+.choice{width:100%;flex:0 0 auto;border:1px solid #eee5ef;border-radius:10px;background:#fff;padding:5px;min-width:0;text-align:left;color:#514554;display:flex;flex-direction:column;gap:3px}
+.choice .preview{height:58px;border-radius:7px;background:linear-gradient(145deg,#faf4fa,#f0e6f2);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.choice .preview canvas{width:100%;height:100%;display:block;touch-action:none}.choice .preview model-viewer{width:100%;height:100%;display:block;background:transparent;pointer-events:none;--poster-color:transparent}.choice .preview{height:82px}.modelChoice{width:100%;min-height:74px;flex:0 0 auto;display:grid;grid-template-columns:76px minmax(0,1fr);grid-template-rows:auto auto auto;column-gap:8px;align-items:center}.modelChoice .preview{grid-column:1;grid-row:1/4;height:66px;width:76px}.modelChoice>b{grid-column:2;grid-row:1;font-size:10px}.modelChoice>.dex{grid-column:2;grid-row:2;font-size:8px}.modelChoice .modelAction{grid-column:2;grid-row:3;font-size:8px;color:#8a718e;font-weight:800}
+#partChoices .choice{display:grid;grid-template-columns:76px minmax(0,1fr);grid-template-rows:auto auto;column-gap:8px;align-items:center;min-height:76px}#partChoices .choice .preview{grid-column:1;grid-row:1/3;width:76px;height:66px}#partChoices .choice>b{grid-column:2;grid-row:1}#partChoices .choice>small{grid-column:2;grid-row:2}.libraryBack{border:0;border-radius:9px;background:#f0e6f1;color:#68546f;padding:7px 8px;font-size:9px;font-weight:800;margin-bottom:6px;text-align:left}.catalogStatus{font-size:8px;color:var(--muted);padding:5px 2px;line-height:1.4}#partLibrary{display:flex;flex-direction:column;min-height:0;flex:1}#partLibrary[hidden],#splitCatalog[hidden]{display:none!important}
+.choice b{font-size:8px;line-height:1.2}.choice small{font-size:7px;color:var(--muted)}
+#splitSearch,#wholeSearch{width:100%;border:1px solid #eadfea;border-radius:9px;padding:8px 7px;font-size:10px;background:white;margin-bottom:6px;outline:none;user-select:text;-webkit-user-select:text}
+#wholeList .wholeChoice{min-height:66px;justify-content:center}.wholeChoice .dex{font-size:8px;color:var(--muted)}
+#selectionHint{position:fixed;z-index:5;right:8px;bottom:calc(68px + env(safe-area-inset-bottom));max-width:55%;display:none;background:#fffdf2ed;border:1px solid white;border-radius:11px;padding:7px 9px;font-size:9px;color:#5d4d63;box-shadow:0 4px 12px #59445f18;text-align:right}
+#selectionHint.show{display:block}
+#modelZoom{position:fixed;z-index:6;right:10px;top:48%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;pointer-events:auto}
+#modelZoom button{width:36px;height:36px;border:1px solid #fff;background:#fffdf2ed;color:#70557a;border-radius:12px;font-size:21px;font-weight:800;box-shadow:0 4px 14px #59445f24;touch-action:manipulation}
+#modelZoom button:active{background:#73577d;color:white}
+
+#albumModal{position:fixed;z-index:12;inset:0;background:#40334480;display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(5px)}
+#albumModal.show{display:flex}.albumCard{width:min(390px,100%);max-height:80dvh;overflow:auto;background:#fffaf1;border:2px solid white;border-radius:22px;padding:14px;box-shadow:0 18px 55px #30203555}
+.albumHead{display:flex;align-items:center;justify-content:space-between}.albumHead h2{font-size:15px;margin:0}.albumHead button{border:0;background:#f0e6f1;border-radius:9px;padding:7px 10px}
+#albumItems{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}.albumItem{background:#fff;border:1px solid #eadfea;border-radius:13px;padding:9px;min-height:75px}.albumItem b{font-size:10px;display:block}.albumItem small{font-size:8px;color:var(--muted)}.albumActions button{width:100%;border:0;border-radius:11px;padding:10px;background:#73577d;color:white;font-size:10px;font-weight:800;margin-top:10px}
+.empty{grid-column:1/-1;padding:20px 8px;text-align:center;color:var(--muted);font-size:10px}
+@media(min-width:760px){#bottomBar{left:50%;right:auto;transform:translateX(-50%);gap:7px}.cat{width:57px;height:54px}.cat .ico{font-size:21px}#shelf{width:220px;top:70px;bottom:80px}#hint{top:65px}}
+
+/* V16: minimal square picker, single selected Pokémon library */
+.tabs,#wholePane,.subnote,#extractStatus{display:none!important}
+#splitPane{display:flex!important}
+#splitSearch{font-size:9px;padding:7px 8px;margin-bottom:5px}
+#splitCatalog,#partChoices{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ grid-auto-rows:min-content;gap:6px!important;overflow-y:auto;overflow-x:hidden;
+ align-content:start;padding:2px 1px 8px;
+}
+#partLibrary{min-height:0;flex:1;display:flex;flex-direction:column}
+.choice.modelChoice,#partChoices .choice{
+ width:100%;min-width:0;min-height:0;aspect-ratio:1/1;
+ display:flex!important;flex-direction:column;justify-content:center;
+ align-items:stretch;gap:0;padding:4px;border-radius:12px;
+}
+.choice.modelChoice .preview,#partChoices .choice .preview{
+ width:100%;height:auto;aspect-ratio:1/1;min-height:0;
+ border-radius:9px;background:linear-gradient(145deg,#faf4fa,#eee2f1);
+}
+.modelChoice>b,.modelChoice>.dex,.modelChoice .modelAction,
+#partChoices .choice>b,#partChoices .choice>small{display:none!important}
+#shelf{width:min(226px,58vw);padding:7px}
+.shelfHead{margin-bottom:5px}
+#selectionHint{display:none;align-items:center;gap:8px;max-width:62%;text-align:left}
+#selectionHint.show{display:flex}
+#deleteSelected{border:0;border-radius:9px;background:#fff0ed;color:#b84e45;padding:7px 9px;font-size:15px;line-height:1;touch-action:manipulation}
+#fuseBtn{background:#73577d;color:white}
+.topRight{gap:4px}.topRight button{padding:7px 8px;font-size:9px}
+
+
+#settingsModal{position:fixed;z-index:14;inset:0;background:#40334480;display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(5px)}
+#settingsModal.show{display:flex}
+.settingsCard{width:min(370px,100%);max-height:82dvh;overflow:auto;background:#fffaf1;border:2px solid white;border-radius:21px;padding:14px;box-shadow:0 18px 55px #30203555}
+.settingRow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid #eadfea}
+.settingRow b{display:block;font-size:11px}.settingRow small{display:block;font-size:9px;color:var(--muted);margin-top:3px}
+.settingRow input[type=checkbox]{width:21px;height:21px;accent-color:#73577d;flex:none}
+.settingRange{padding:11px 2px;border-bottom:1px solid #eadfea}
+.settingRange label{display:flex;justify-content:space-between;font-size:10px;font-weight:800}
+.settingRange output{color:#73577d;font-variant-numeric:tabular-nums}
+.settingRange input{width:100%;margin:10px 0 0;accent-color:#73577d}
+#settingsBtn{font-size:16px;min-width:34px}
+
+
+#partDeleteButton{position:fixed;z-index:9;display:none;left:50%;top:50%;transform:translate(-50%,-100%);width:38px;height:38px;border:2px solid #fff;border-radius:50%;background:#ff5264;color:#fff;font-size:17px;font-weight:900;box-shadow:0 3px 14px #9b203b66;touch-action:manipulation;pointer-events:auto}
+#partDeleteButton.show{display:grid;place-items:center}
+
+
+/* V27: honour hidden state and keep model previews from intercepting taps */
+#splitCatalog[hidden],#partLibrary[hidden],#wholeList[hidden],#wholePane[hidden],#splitPane[hidden]{display:none!important}
+#splitCatalog:not([hidden]),#partLibrary:not([hidden]){display:flex!important;flex-direction:column!important}
+.modelChoice model-viewer{pointer-events:none}
+#splitCatalog .choice,#partChoices .choice{touch-action:manipulation;cursor:pointer}
+
+/* V28: harden touch/click hit areas above the WebGL canvas */
+#bottomBar{z-index:30!important;pointer-events:auto!important}
+#bottomBar .cat{pointer-events:auto!important;touch-action:manipulation;position:relative;z-index:31}
+#shelf{z-index:32}
+#shelf.open{display:flex!important}
+
+/* V29: direct touch targets, above every canvas/overlay */
+#stage{z-index:0!important}
+#bottomBar{z-index:99999!important;pointer-events:auto!important;isolation:isolate}
+#bottomBar .cat{z-index:100000!important;position:relative!important;display:flex!important;pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer}
+#shelf{z-index:100001!important;pointer-events:auto!important}
+#shelf.open{display:flex!important;pointer-events:auto!important}
+#shelf button,#shelf input{pointer-events:auto!important;touch-action:manipulation}
+#v29Diag{font-size:9px;line-height:1.5;padding:7px 8px;margin:0 0 7px;border-radius:9px;background:#f4e8f3;color:#604969;display:none}
+#v29Diag.show{display:block}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+</head>
+<body>
+<div id="stage"></div>
+<div class="top">
+ <div class="brand"><div class="logo">🧬</div><div><b>寶可夢自由拼裝工坊</b><small>V34 · CAPPED VOLUMES + RACE-SAFE VOXEL REMESH</small></div></div>
+ <div class="topRight"><button id="fuseBtn" type="button" disabled title="選取部位後由系統自動融合">⚙ 自動融合</button><button id="albumBtn">🃏 圖冊</button><button id="settingsBtn" aria-label="系統設定">⚙</button><button id="resetBtn">清空</button></div>
+</div>
+<div id="hint">正面平視・點選部位後系統自動組裝融合</div>
+<aside id="shelf">
+ <div class="shelfHead"><b id="shelfTitle">選擇頭部</b><button id="closeShelf">✕</button></div><div id="v29Diag"></div>
+ 
+ <section id="splitPane" class="active">
+  
+  <input id="splitSearch" type="search" placeholder="搜尋寶可夢英文名稱或圖鑑編號">
+  <div id="splitCatalog"><div class="catalogStatus">正在下載寶可夢素材清單…</div></div>
+  <div id="partLibrary" hidden>
+   <button id="backToCatalog" class="libraryBack">← 返回寶可夢清單</button>
+   <div id="extractStatus" class="extractStatus">選擇已提取的真實零件</div>
+   <div id="partChoices"><div class="empty">尚未提取任何真實網格。</div></div>
+  </div>
+ </section>
+ <section id="wholePane">
+  
+  <input id="wholeSearch" type="search" placeholder="搜尋寶可夢英文名稱或圖鑑編號">
+  <div id="wholeList"><div class="catalogStatus">正在下載寶可夢素材清單…</div></div>
+ </section>
+</aside>
+<div id="selectionHint"><span>已選取：<b id="selectedLabel">—</b></span></div>
+<button id="partDeleteButton" type="button" aria-label="刪除目前選取部位" title="刪除部位">🗑</button>
+<div id="modelZoom" aria-label="寶可夢大小調整">
+ <button id="zoomIn" type="button" aria-label="放大寶可夢">＋</button>
+ <button id="zoomOut" type="button" aria-label="縮小寶可夢">－</button>
+ <button id="zoomReset" type="button" aria-label="恢復寶可夢大小">↺</button>
+</div>
+<div id="bottomBar">
+ <button class="cat" data-part="head" onclick="window.__partClickV29('head',this)" onpointerup="window.__partClickV29('head',this)"><span class="ico">🙂</span><small>頭部</small></button>
+ <button class="cat" data-part="torso" onclick="window.__partClickV29('torso',this)" onpointerup="window.__partClickV29('torso',this)"><span class="ico">🧍</span><small>身體</small></button>
+ <button class="cat" data-part="arms" onclick="window.__partClickV29('arms',this)" onpointerup="window.__partClickV29('arms',this)"><span class="ico">💪</span><small>手</small></button>
+ <button class="cat" data-part="legs" onclick="window.__partClickV29('legs',this)" onpointerup="window.__partClickV29('legs',this)"><span class="ico">🦶</span><small>腳</small></button>
+ <button class="cat" data-part="tail" onclick="window.__partClickV29('tail',this)" onpointerup="window.__partClickV29('tail',this)"><span class="ico">〰️</span><small>尾巴</small></button>
+ <button class="cat" data-part="wings" onclick="window.__partClickV29('wings',this)" onpointerup="window.__partClickV29('wings',this)"><span class="ico">🪽</span><small>翅膀</small></button>
+</div>
+<div id="toast"></div>
+<div id="albumModal"><div class="albumCard"><div class="albumHead"><h2>🃏 我的卡牌圖冊</h2><button id="closeAlbum">關閉</button></div><div id="albumItems"></div><div class="albumActions"><button id="saveCard">收藏目前作品</button></div></div></div>
+<div id="settingsModal">
+ <div class="settingsCard">
+  <div class="albumHead"><h2>⚙ 系統設定</h2><button id="closeSettings">關閉</button></div>
+  <div class="settingRow"><div><b>選取輪廓線</b><small>顯示／隱藏選取部位外框</small></div><input id="outlineEnabled" type="checkbox" checked></div>
+  <div class="settingRange"><label for="outlineStrength">輪廓強度 <output id="outlineStrengthValue">5.2</output></label><input id="outlineStrength" type="range" min="0.5" max="10" step="0.1" value="5.2"></div>
+  <div class="settingRange"><label for="outlineGlow">螢光光暈 <output id="outlineGlowValue">0.9</output></label><input id="outlineGlow" type="range" min="0" max="3" step="0.1" value="0.9"></div>
+  <div class="settingRange"><label for="outlineThickness">輪廓粗細 <output id="outlineThicknessValue">2.1</output></label><input id="outlineThickness" type="range" min="0.5" max="6" step="0.1" value="2.1"></div>
+  <div class="albumActions"><button id="frontViewReset">恢復正面遠距視角</button><button id="resetSettings">恢復預設設定</button></div>
+ </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {OutlinePass} from 'three/addons/postprocessing/OutlinePass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
+import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
+import {HueSaturationShader} from 'three/addons/shaders/HueSaturationShader.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+
+const stage=document.querySelector('#stage'),scene=new THREE.Scene();scene.background=new THREE.Color(0xf5edf5);
+const VIEW_PIVOT_Y=-.65; // level front view around the fixed display-plate center
+const camera=new THREE.PerspectiveCamera(36,innerWidth/innerHeight,.1,200);camera.position.set(0,VIEW_PIVOT_Y,18);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.toneMappingExposure=1;stage.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,VIEW_PIVOT_Y,0);controls.enableDamping=true;controls.dampingFactor=.075;controls.enablePan=false;controls.enableZoom=false;controls.minDistance=5;controls.maxDistance=18;controls.minPolarAngle=Math.PI*.35;
+const PLATFORM_BOTTOM_Y=-1.775; // platform top=-1.625, bottom=-1.775
+function updateCameraFloorLimit(){
+ const allowedVertical=(PLATFORM_BOTTOM_Y+.015)-controls.target.y;
+ const ratio=THREE.MathUtils.clamp(allowedVertical/controls.maxDistance,-.999,.999);
+ controls.maxPolarAngle=Math.min(Math.PI*.65,Math.acos(ratio)-.002);
+}
+updateCameraFloorLimit();controls.update();
+scene.add(new THREE.HemisphereLight(0xffffff,0x777777,1.65));
+const key=new THREE.DirectionalLight(0xffffff,2.0);key.position.set(-4,8,7);scene.add(key);const fill=new THREE.DirectionalLight(0xffffff,.72);fill.position.set(5,4,-5);scene.add(fill);
+// Display plate, ring and floor stay directly under scene, never under the rotating workspaceRoot.
+const floor=new THREE.Mesh(new THREE.CircleGeometry(10,64),new THREE.MeshStandardMaterial({color:0xfff8ef,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.8;scene.add(floor);
+const platform=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.3,.15,64),new THREE.MeshStandardMaterial({color:0xe7d5e9,roughness:.72}));platform.position.y=-1.7;scene.add(platform);
+const workspaceRoot=new THREE.Group();
+workspaceRoot.name='DisplayPlateCenterPivot';
+workspaceRoot.position.set(0,-1.625,0);
+scene.add(workspaceRoot);
+const centerMarker=new THREE.Mesh(new THREE.TorusGeometry(.12,.012,8,32),new THREE.MeshBasicMaterial({color:0xc69ecb,transparent:true,opacity:.75}));
+centerMarker.rotation.x=Math.PI/2;centerMarker.position.set(0,-1.605,0);scene.add(centerMarker);
+
+const ring=new THREE.Mesh(new THREE.TorusGeometry(2.17,.035,10,64),new THREE.MeshStandardMaterial({color:0xc69ecb}));ring.rotation.x=Math.PI/2;ring.position.y=-1.61;scene.add(ring);
+const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));const outline=new OutlinePass(new THREE.Vector2(innerWidth,innerHeight),scene,camera);outline.edgeStrength=5.2;outline.edgeGlow=.9;outline.edgeThickness=2.1;outline.pulsePeriod=0;outline.visibleEdgeColor.set('#ff1744');outline.hiddenEdgeColor.set('#ff1744');composer.addPass(outline);const colorPass=new ShaderPass(HueSaturationShader);colorPass.uniforms.hue.value=0;colorPass.uniforms.saturation.value=.12;composer.addPass(colorPass);composer.addPass(new OutputPass());
+
+const draco=new DRACOLoader();draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');const gltfLoader=new GLTFLoader();gltfLoader.setCrossOrigin('anonymous');gltfLoader.setDRACOLoader(draco);gltfLoader.setMeshoptDecoder(MeshoptDecoder);draco.preload();
+const labels={head:'頭部',torso:'身體',arms:'手',legs:'腳',tail:'尾巴',wings:'翅膀'};
+let activePart='head',selected=null,objects=[],modelCatalog=[],extractedParts=[],splitLibraryMode='catalog',activeSourceName='',fusionResult=null;
+const libraryMachine={mode:'catalog',sourceName:'',part:'head',revision:0};
+const catalogMachine={phase:'idle',message:'尚未載入清單',count:0};
+let fusionJobId=0;
+const MODEL_LOAD_TRANSITIONS={
+ idle:['idle','loading'],loading:['loading','processing','cancelled','error'],
+ processing:['processing','ready','cancelled','error'],ready:['ready','loading'],
+ cancelled:['cancelled','loading'],error:['error','loading']
+};
+const modelLoadMachine={phase:'idle',jobId:0,name:'',progress:0,message:'等待模型'};
+let modelLoadJobId=0;
+function setModelLoadPhase(phase,message='',progress=null){
+ const allowed=MODEL_LOAD_TRANSITIONS[modelLoadMachine.phase]||[];
+ if(!allowed.includes(phase)){console.warn('Ignored invalid model-load transition:',modelLoadMachine.phase,'→',phase);return false;}
+ modelLoadMachine.phase=phase;modelLoadMachine.message=message||phase;
+ if(progress!==null)modelLoadMachine.progress=Math.max(0,Math.min(100,progress));
+ const hint=document.querySelector('#hint');
+ if(hint&&['loading','processing','error'].includes(phase))hint.textContent=modelLoadMachine.message;
+ return true;
+}
+function disposeLoadedScene(root){
+ if(!root)return;
+ const geometries=new Set(),materials=new Set(),textures=new Set(),skeletonTextures=new Set();
+ root.traverse(node=>{
+  if(node.geometry)geometries.add(node.geometry);
+  if(node.material)(Array.isArray(node.material)?node.material:[node.material]).forEach(material=>{
+   if(!material)return;materials.add(material);
+   for(const value of Object.values(material))if(value?.isTexture)textures.add(value);
+  });
+  if(node.skeleton?.boneTexture)skeletonTextures.add(node.skeleton.boneTexture);
+ });
+ geometries.forEach(g=>g.dispose?.());materials.forEach(m=>m.dispose?.());
+ textures.forEach(t=>t.dispose?.());skeletonTextures.forEach(t=>t.dispose?.());
+}
+const FUSION_PHASES=Object.freeze({
+ idle:'idle',collecting:'collecting',waitingBody:'waiting-body',aligning:'aligning',
+ voxelizing:'voxelizing',remeshing:'remeshing',projecting:'projecting',
+ validating:'validating',ready:'ready',error:'error',cancelled:'cancelled'
+});
+const FUSION_TRANSITIONS={
+ idle:['idle','collecting','waiting-body','aligning','cancelled'],
+ collecting:['collecting','waiting-body','aligning','cancelled','idle','error'],
+ 'waiting-body':['waiting-body','collecting','aligning','cancelled','idle','error'],
+ aligning:['aligning','voxelizing','cancelled','error','idle'],
+ voxelizing:['voxelizing','remeshing','cancelled','error','idle'],
+ remeshing:['remeshing','projecting','cancelled','error','idle'],
+ projecting:['projecting','validating','cancelled','error','idle'],
+ validating:['validating','ready','cancelled','error','idle'],
+ ready:['ready','collecting','aligning','cancelled','idle'],
+ error:['error','collecting','waiting-body','aligning','cancelled','idle'],
+ cancelled:['cancelled','collecting','waiting-body','aligning','idle']
+};
+const fusionMachine={phase:FUSION_PHASES.idle,jobId:0,progress:0,message:'等待選擇部位',error:null,history:[]};
+const FUSION_PHASE_LABELS={
+ idle:'⚙ 自動融合',collecting:'等待更多部位','waiting-body':'等待身體',
+ aligning:'解剖定位中…',voxelizing:'體素化中…',remeshing:'重新塑形中…',
+ projecting:'材質投射中…',validating:'網格驗證中…',ready:'✓ 已融合',
+ error:'融合失敗',cancelled:'融合已取消'
+};
+function setFusionPhase(phase,message='',progress=null){
+ if(!Object.values(FUSION_PHASES).includes(phase))throw new Error('未知融合狀態：'+phase);
+ const previous=fusionMachine.phase;
+ if(!(FUSION_TRANSITIONS[previous]||[]).includes(phase)){
+  console.warn('Ignored invalid fusion state transition:',previous,'→',phase);
+  return false;
+ }
+ fusionMachine.phase=phase;
+ fusionMachine.message=message||FUSION_PHASE_LABELS[phase]||phase;
+ fusionMachine.error=phase==='error'?fusionMachine.message:null;
+ if(progress!==null)fusionMachine.progress=Math.max(0,Math.min(100,progress));
+ if(['idle','collecting','waiting-body','cancelled','error'].includes(phase))fusionMachine.progress=0;
+ if(phase==='ready')fusionMachine.progress=100;
+ fusionMachine.history.push({from:previous,to:phase,message:fusionMachine.message,at:Date.now(),jobId:fusionMachine.jobId});
+ if(fusionMachine.history.length>60)fusionMachine.history.shift();
+ const button=document.querySelector('#fuseBtn');
+ if(button){
+  button.textContent=phase==='voxelizing'?`體素化 ${Math.round(fusionMachine.progress)}%`:
+   phase==='projecting'?`材質 ${Math.round(fusionMachine.progress)}%`:
+   (FUSION_PHASE_LABELS[phase]||'⚙ 自動融合');
+  button.disabled=true;
+  button.title=`融合狀態：${phase}｜${fusionMachine.message}`;
+ }
+ const hint=document.querySelector('#hint');
+ if(hint&&phase!=='idle')hint.textContent=`融合狀態：${fusionMachine.message}`;
+ return true;
+}
+function invalidateFusionJob(message='新的部位操作已取消舊融合'){
+ fusionJobId++;
+ fusionMachine.jobId=fusionJobId;
+ if(['aligning','voxelizing','remeshing','projecting','validating'].includes(fusionMachine.phase)){
+  setFusionPhase(FUSION_PHASES.cancelled,message);
+ }
+ return fusionJobId;
+}
+function fusionYield(){
+ return new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+}
+function select(obj){
+ selected=obj||null;
+ const outlineTarget=fusionResult&&selected?fusionResult.proxies.find(p=>p.userData.sourceObject===selected):selected;
+ outline.selectedObjects=outlineTarget?[outlineTarget]:[];
+ const panel=document.querySelector('#selectionHint');
+ panel.classList.toggle('show',!!selected);
+ document.querySelector('#selectedLabel').textContent=selected?.userData?.label||'—';
+ updateHint();
+}
+function updateHint(){
+ const hint=document.querySelector('#hint');
+ if(!hint)return;
+ hint.textContent=selected
+  ? `已選取：${selected.userData?.label||'模型'}｜選擇部位後由系統自動組裝融合`
+  : `工作區 ${objects.filter(o=>o.visible!==false).length} 件｜點選下方部位開啟寶可夢清單；選取模型後再選部位`;
+}
+function smoothNormalsByPosition(geometry,precision=1e-5){
+ const pos=geometry.attributes.position;
+ if(!pos||pos.count<3)return geometry;
+ const sums=new Map(),face=new THREE.Vector3(),a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+ const keyAt=i=>`${Math.round(pos.getX(i)/precision)},${Math.round(pos.getY(i)/precision)},${Math.round(pos.getZ(i)/precision)}`;
+ const index=geometry.index,triCount=(index?index.count:pos.count)/3;
+ const ids=[];
+ for(let t=0;t<triCount;t++){
+  const ia=index?index.getX(t*3):t*3,ib=index?index.getX(t*3+1):t*3+1,ic=index?index.getX(t*3+2):t*3+2;
+  a.fromBufferAttribute(pos,ia);b.fromBufferAttribute(pos,ib);c.fromBufferAttribute(pos,ic);
+  face.subVectors(b,a).cross(new THREE.Vector3().subVectors(c,a));
+  if(face.lengthSq()<1e-16)continue;
+  const n=face.clone();
+  for(const i of [ia,ib,ic]){
+   const k=keyAt(i);if(!sums.has(k))sums.set(k,new THREE.Vector3());
+   sums.get(k).add(n);
+  }
+ }
+ const normals=new Float32Array(pos.count*3);
+ for(let i=0;i<pos.count;i++){
+  const n=sums.get(keyAt(i))||new THREE.Vector3(0,1,0);n.normalize();
+  normals[i*3]=n.x;normals[i*3+1]=n.y;normals[i*3+2]=n.z;
+ }
+ geometry.setAttribute('normal',new THREE.BufferAttribute(normals,3));
+ geometry.computeBoundingSphere();
+ return geometry;
+}
+
+function addWorkspaceObject(obj){
+ workspaceRoot.add(obj);
+ obj.updateMatrixWorld(true);
+ objects.push(obj);
+}
+
+// V30 FIX: safely remove an extracted part before replacing its category slot.
+// This function was called by addExtractedPart() in V29 but had never been defined.
+function disposeWorkspaceObject(obj){
+ if(!obj)return;
+
+ // Clear selection/outline references before disposing the object's resources.
+ if(selected===obj)select(null);
+
+ if(obj.parent)obj.parent.remove(obj);
+ objects=objects.filter(item=>item!==obj);
+
+ const geometries=new Set();
+ const materials=new Set();
+ const skeletonTextures=new Set();
+
+ obj.traverse(node=>{
+  if(node.geometry)geometries.add(node.geometry);
+  if(node.material){
+   const list=Array.isArray(node.material)?node.material:[node.material];
+   list.forEach(material=>{if(material)materials.add(material);});
+  }
+  if(node.skeleton?.boneTexture)skeletonTextures.add(node.skeleton.boneTexture);
+ });
+
+ geometries.forEach(geometry=>geometry.dispose());
+ materials.forEach(material=>material.dispose?.());
+ skeletonTextures.forEach(texture=>texture.dispose?.());
+}
+function worldBox(obj){
+ obj.updateWorldMatrix(true,true);
+ return new THREE.Box3().setFromObject(obj);
+}
+function workspaceBounds(obj){
+ obj.updateWorldMatrix(true,true);
+ const world=worldBox(obj),inv=workspaceRoot.matrixWorld.clone().invert(),out=new THREE.Box3();
+ for(const x of [world.min.x,world.max.x])for(const y of [world.min.y,world.max.y])for(const z of [world.min.z,world.max.z]){
+  out.expandByPoint(new THREE.Vector3(x,y,z).applyMatrix4(inv));
+ }
+ return out;
+}
+function boxCenter(box){return box.getCenter(new THREE.Vector3());}
+
+
+function partBox(obj){
+ return workspaceBounds(obj);
+}
+function alignForeignPartToTorso(part,torso){
+ if(part.userData.sourceName===torso.userData.sourceName)return false;
+ const tb=partBox(torso),pb=partBox(part);
+ if(tb.isEmpty()||pb.isEmpty())return false;
+ const ts=tb.getSize(new THREE.Vector3()),ps=pb.getSize(new THREE.Vector3());
+ const tc=tb.getCenter(new THREE.Vector3());
+ const category=part.userData.partCategory;
+ const targets={
+  head:{h:.58,w:1.02,d:.92,offset:new THREE.Vector3(0,ts.y*.63,0)},
+  arms:{h:.76,w:1.85,d:.90,offset:new THREE.Vector3(0,ts.y*.12,0)},
+  legs:{h:.82,w:1.12,d:.88,offset:new THREE.Vector3(0,-ts.y*.70,0)},
+  wings:{h:.86,w:2.25,d:.82,offset:new THREE.Vector3(0,ts.y*.20,-ts.z*.22)},
+  tail:{h:.78,w:.82,d:1.35,offset:new THREE.Vector3(0,-ts.y*.12,-ts.z*.55)}
+ };
+ const spec=targets[category]||targets.head;
+ const ratios=[
+  (ts.y*spec.h)/Math.max(ps.y,.001),
+  (ts.x*spec.w)/Math.max(ps.x,.001),
+  (ts.z*spec.d)/Math.max(ps.z,.001)
+ ].sort((a,b)=>a-b);
+ const scale=THREE.MathUtils.clamp(ratios[1],.48,2.15);
+ const targetCenter=tc.clone().add(spec.offset);
+ const sourceCenter=pb.getCenter(new THREE.Vector3());
+ part.scale.setScalar(scale);
+ part.position.copy(targetCenter).sub(sourceCenter.multiplyScalar(scale));
+ part.updateMatrixWorld(true);
+ part.userData.autoAlignedTo=torso.userData.sourceName;
+ return true;
+}
+function resetPartAssemblyTransform(part){
+ if(part.userData.baseAssemblyPosition)part.position.copy(part.userData.baseAssemblyPosition);
+ if(part.userData.baseAssemblyQuaternion)part.quaternion.copy(part.userData.baseAssemblyQuaternion);
+ if(part.userData.baseAssemblyScale)part.scale.copy(part.userData.baseAssemblyScale);
+ part.updateMatrixWorld(true);
+}
+function capOpenSurfaceForVoxelization(surfaceGeometry){
+ const source=surfaceGeometry.index?surfaceGeometry.toNonIndexed():surfaceGeometry.clone();
+ const position=source.attributes.position;
+ if(!position||position.count<3||position.count%3!==0){source.dispose();throw new Error('部位表面三角形資料不完整');}
+ const bounds=new THREE.Box3().setFromBufferAttribute(position),size=bounds.getSize(new THREE.Vector3());
+ const epsilon=Math.max(1e-7,Math.max(size.x,size.y,size.z)*1e-6);
+ const unique=[],vertexIds=new Int32Array(position.count),vertexMap=new Map();
+ const getVertexId=i=>{
+  const x=position.getX(i),y=position.getY(i),z=position.getZ(i);
+  const key=Math.round(x/epsilon)+','+Math.round(y/epsilon)+','+Math.round(z/epsilon);
+  let id=vertexMap.get(key);
+  if(id===undefined){id=unique.length;vertexMap.set(key,id);unique.push(new THREE.Vector3(x,y,z));}
+  vertexIds[i]=id;return id;
+ };
+ for(let i=0;i<position.count;i++)getVertexId(i);
+ const edges=new Map();
+ const addEdge=(a,b)=>{
+  if(a===b)return;
+  const key=a<b?a+':'+b:b+':'+a,edge=edges.get(key);
+  if(edge)edge.count++;else edges.set(key,{a,b,count:1,key});
+ };
+ for(let i=0;i<position.count;i+=3){const a=vertexIds[i],b=vertexIds[i+1],c=vertexIds[i+2];addEdge(a,b);addEdge(b,c);addEdge(c,a);}
+ const boundary=[...edges.values()].filter(e=>e.count===1);
+ const nonManifold=[...edges.values()].filter(e=>e.count>2);
+ if(nonManifold.length){source.dispose();throw new Error('部位包含非流形邊，無法可靠封閉體積（'+nonManifold.length+' 條）');}
+ if(!boundary.length)return source;
+ const adjacency=new Map();
+ for(const edge of boundary){
+  if(!adjacency.has(edge.a))adjacency.set(edge.a,new Set());
+  if(!adjacency.has(edge.b))adjacency.set(edge.b,new Set());
+  adjacency.get(edge.a).add(edge.b);adjacency.get(edge.b).add(edge.a);
+ }
+ for(const [vertex,neighbors] of adjacency){
+  if(neighbors.size!==2){source.dispose();throw new Error('部位切口不是完整封閉迴圈（邊界頂點度數 '+neighbors.size+'）');}
+ }
+ const remaining=new Set(boundary.map(e=>e.key)),keyOf=(a,b)=>a<b?a+':'+b:b+':'+a;
+ const capPositions=[];
+ while(remaining.size){
+  const firstKey=remaining.values().next().value,first=edges.get(firstKey);
+  if(!first)break;
+  const startVertex=first.a;let previous=-1,current=startVertex,guard=0;const loop=[];
+  while(guard++<=boundary.length+2){
+   loop.push(current);
+   const candidates=[...adjacency.get(current)].filter(next=>next!==previous&&remaining.has(keyOf(current,next)));
+   if(!candidates.length){source.dispose();throw new Error('部位切口無法形成封閉迴圈');}
+   const next=candidates[0];remaining.delete(keyOf(current,next));previous=current;current=next;
+   if(current===startVertex)break;
+  }
+  if(current!==startVertex||loop.length<3){source.dispose();throw new Error('部位切口迴圈不完整，無法封閉');}
+  const center=new THREE.Vector3();loop.forEach(id=>center.add(unique[id]));center.multiplyScalar(1/loop.length);
+  // Newell normal gives a stable projection plane for concave cut boundaries.
+  const normal=new THREE.Vector3();
+  for(let i=0;i<loop.length;i++){
+   const a=unique[loop[i]],b=unique[loop[(i+1)%loop.length]];
+   normal.x+=(a.y-b.y)*(a.z+b.z);normal.y+=(a.z-b.z)*(a.x+b.x);normal.z+=(a.x-b.x)*(a.y+b.y);
+  }
+  if(normal.lengthSq()<1e-14){source.dispose();throw new Error('部位切口平面無法計算');}
+  normal.normalize();
+  const axis=unique[loop[0]].clone().sub(center).normalize();
+  if(axis.lengthSq()<1e-12)axis.set(1,0,0);
+  const side=new THREE.Vector3().crossVectors(normal,axis).normalize();
+  const contour=loop.map(id=>{
+   const v=unique[id].clone().sub(center);return new THREE.Vector2(v.dot(axis),v.dot(side));
+  });
+  const capTriangles=THREE.ShapeUtils.triangulateShape(contour,[]);
+  if(!capTriangles.length){source.dispose();throw new Error('部位切口無法三角化封口');}
+  for(const tri of capTriangles){
+   for(const index of tri){const v=unique[loop[index]];capPositions.push(v.x,v.y,v.z);}
+  }
+ }
+ const originalPositions=[];
+ for(let i=0;i<position.count;i++)originalPositions.push(position.getX(i),position.getY(i),position.getZ(i));
+ const volumeGeometry=new THREE.BufferGeometry();
+ volumeGeometry.setAttribute('position',new THREE.Float32BufferAttribute(originalPositions.concat(capPositions),3));
+ volumeGeometry.computeBoundingBox();volumeGeometry.computeBoundingSphere();source.dispose();
+ if(volumeGeometry.attributes.position.count<9){volumeGeometry.dispose();throw new Error('部位封閉後沒有形成有效體積');}
+ return volumeGeometry;
+}
+function disposeFusionEntry(entry){
+ if(!entry)return;
+ entry.bvh=null;entry.surfaceBvh=null;
+ entry.geometry?.dispose?.();entry.volumeGeometry?.dispose?.();
+}
+function collectFusionSurfaceEntries(sources,MeshBVH){
+ workspaceRoot.updateMatrixWorld(true);
+ const inverseRoot=workspaceRoot.matrixWorld.clone().invert(),entries=[];
+ try{
+  sources.forEach((source,partIndex)=>{
+   source.updateMatrixWorld(true,true);
+   source.traverse(node=>{
+    if(!node.isMesh||!node.geometry?.attributes?.position)return;
+    const surfaceGeometry=node.geometry.index?node.geometry.toNonIndexed():node.geometry.clone();
+    surfaceGeometry.applyMatrix4(inverseRoot.clone().multiply(node.matrixWorld));
+    surfaceGeometry.computeBoundingBox();
+    if(!surfaceGeometry.boundingBox||surfaceGeometry.attributes.position.count<3){surfaceGeometry.dispose();return;}
+    const volumeGeometry=capOpenSurfaceForVoxelization(surfaceGeometry);
+    const surfaceBvh=new MeshBVH(surfaceGeometry,{maxLeafSize:12,indirect:true});
+    const bvh=new MeshBVH(volumeGeometry,{maxLeafSize:12});
+    entries.push({id:entries.length,partIndex,source,geometry:surfaceGeometry,volumeGeometry,surfaceBvh,bvh,material:node.material,bounds:volumeGeometry.boundingBox.clone()});
+   });
+  });
+ }catch(error){entries.forEach(disposeFusionEntry);throw error;}
+ if(!entries.length)throw new Error('沒有可供體素化的有效網格');
+ return entries;
+}
+function createFusionGrid(entries,resolution=72){
+ const bounds=new THREE.Box3();
+ entries.forEach(e=>bounds.union(e.bounds));
+ const size=bounds.getSize(new THREE.Vector3());
+ const maxDim=Math.max(size.x,size.y,size.z,.25);
+ const step=maxDim/(resolution-8);
+ const padding=step*3.5;
+ const min=bounds.min.clone().addScalar(-padding);
+ const nx=Math.max(8,Math.ceil(size.x/step)+7);
+ const ny=Math.max(8,Math.ceil(size.y/step)+7);
+ const nz=Math.max(8,Math.ceil(size.z/step)+7);
+ const total=nx*ny*nz;
+ if(total>1000000)throw new Error('模型範圍過大，請先縮小模型或減少部位');
+ return {min,step,nx,ny,nz,total,size};
+}
+function gridIndex(x,y,z,g){return (z*g.ny+y)*g.nx+x;}
+function voxelizePart(entries,partIndex,grid,token){
+ const mask=new Uint8Array(grid.total);
+ const ray=new THREE.Ray(new THREE.Vector3(),new THREE.Vector3(1,0,0));
+ const far=grid.nx*grid.step+grid.step*4;
+ const yPoint=new THREE.Vector3(),zPoint=new THREE.Vector3();
+ let occupied=0;
+ const partEntries=entries.filter(e=>e.partIndex===partIndex);
+ if(!partEntries.length)throw new Error('部位沒有可用網格');
+ return (async()=>{
+  for(let z=0;z<grid.nz;z++){
+   const pz=grid.min.z+(z+.5)*grid.step;
+   for(let y=0;y<grid.ny;y++){
+    const py=grid.min.y+(y+.5)*grid.step;
+    ray.origin.set(grid.min.x-grid.step*2,py,pz);
+    ray.direction.set(1,0,0);
+    for(const entry of partEntries){
+     const hits=entry.bvh.raycast(ray,THREE.DoubleSide,0,far);
+     if(!hits||hits.length<2)continue;
+     hits.sort((a,b)=>a.point.x-b.point.x);
+     const xs=[];
+     const dedupe=grid.step*.16;
+     for(const hit of hits){
+      const x=hit.point.x;
+      if(!xs.length||Math.abs(x-xs[xs.length-1])>dedupe)xs.push(x);
+     }
+     if(xs.length%2)xs.pop();
+     for(let k=0;k+1<xs.length;k+=2){
+      const left=xs[k],right=xs[k+1];
+      const from=Math.max(0,Math.ceil((left-grid.min.x)/grid.step-.5));
+      const to=Math.min(grid.nx-1,Math.floor((right-grid.min.x)/grid.step-.5));
+      for(let x=from;x<=to;x++){
+       const idx=gridIndex(x,y,z,grid);
+       if(!mask[idx]){mask[idx]=1;occupied++;}
+      }
+     }
+    }
+   }
+   if(z%3===2){
+    if(token!==fusionJobId)throw new Error('融合工作已取消');
+    await fusionYield();
+   }
+  }
+  if(occupied<12)throw new Error('部位體積無法辨識，可能是開放或過薄的網格');
+  return {mask,occupied};
+ })();
+}
+async function signedDistanceFromMask(mask,grid,token,onProgress){
+ const {nx,ny,nz,total,step}=grid;
+ const distance=new Float32Array(total);distance.fill(1e6);
+ const at=(x,y,z)=>gridIndex(x,y,z,grid);
+ // Seed both sides of every inside/outside boundary.
+ for(let z=1;z<nz-1;z++){
+  for(let y=1;y<ny-1;y++){
+   for(let x=1;x<nx-1;x++){
+    const idx=at(x,y,z),v=mask[idx];
+    if(mask[at(x-1,y,z)]!==v||mask[at(x+1,y,z)]!==v||
+       mask[at(x,y-1,z)]!==v||mask[at(x,y+1,z)]!==v||
+       mask[at(x,y,z-1)]!==v||mask[at(x,y,z+1)]!==v)distance[idx]=0;
+   }
+  }
+  if(z%5===0){if(token!==fusionJobId)throw new Error('融合工作已取消');await fusionYield();}
+ }
+ const forward=[],backward=[];
+ for(let dz=-1;dz<=1;dz++)for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+  if(dx===0&&dy===0&&dz===0)continue;
+  const entry={dx,dy,dz,weight:step*Math.hypot(dx,dy,dz)};
+  if(dz<0||(dz===0&&dy<0)||(dz===0&&dy===0&&dx<0))forward.push(entry);
+  else backward.push(entry);
+ }
+ const relax=(x,y,z,neighbors)=>{
+  const idx=at(x,y,z);let best=distance[idx];
+  for(const n of neighbors){
+   const xx=x+n.dx,yy=y+n.dy,zz=z+n.dz;
+   if(xx<0||xx>=nx||yy<0||yy>=ny||zz<0||zz>=nz)continue;
+   const candidate=distance[at(xx,yy,zz)]+n.weight;
+   if(candidate<best)best=candidate;
+  }
+  distance[idx]=best;
+ };
+ for(let z=0;z<nz;z++){
+  for(let y=0;y<ny;y++)for(let x=0;x<nx;x++)relax(x,y,z,forward);
+  if(z%5===0){if(token!==fusionJobId)throw new Error('融合工作已取消');await fusionYield();}
+ }
+ for(let z=nz-1;z>=0;z--){
+  for(let y=ny-1;y>=0;y--)for(let x=nx-1;x>=0;x--)relax(x,y,z,backward);
+  if(z%5===0){if(token!==fusionJobId)throw new Error('融合工作已取消');await fusionYield();}
+ }
+ const sdf=new Float32Array(total);
+ for(let i=0;i<total;i++){
+  const d=(distance[i]+.5)*step;
+  sdf[i]=mask[i]?-d:d;
+ }
+ return sdf;
+}
+function smoothMinimum(a,b,k){
+ const h=Math.max(k-Math.abs(a-b),0)/k;
+ return Math.min(a,b)-h*h*k*.25;
+}
+async function buildSmoothUnionField(sources,entries,grid,token){
+ let field=null,owner=null;
+ const blendRadius=grid.step*4.0;
+ for(let partIndex=0;partIndex<sources.length;partIndex++){
+  const {mask,occupied}=await voxelizePart(entries,partIndex,grid,token);
+  const sdf=await signedDistanceFromMask(mask,grid,token);
+  if(!field){
+   field=sdf;owner=new Uint8Array(grid.total);owner.fill(partIndex);
+  }else{
+   for(let i=0;i<grid.total;i++){
+    if(sdf[i]<field[i])owner[i]=partIndex;
+    field[i]=smoothMinimum(field[i],sdf[i],blendRadius);
+   }
+  }
+  setFusionPhase(FUSION_PHASES.voxelizing,`體素化 ${partIndex+1}/${sources.length}：${sources[partIndex].userData.label||'部位'}（${occupied.toLocaleString()} 格）`,
+   ((partIndex+1)/sources.length)*100);
+  if(token!==fusionJobId)throw new Error('融合工作已取消');
+  await fusionYield();
+ }
+ return {field,owner,blendRadius};
+}
+function barycentricWeights(point,a,b,c){
+ const v0=b.clone().sub(a),v1=c.clone().sub(a),v2=point.clone().sub(a);
+ const d00=v0.dot(v0),d01=v0.dot(v1),d11=v1.dot(v1),d20=v2.dot(v0),d21=v2.dot(v1);
+ const denom=d00*d11-d01*d01;
+ if(Math.abs(denom)<1e-14)return [1/3,1/3,1/3];
+ const v=(d11*d20-d01*d21)/denom,w=(d00*d21-d01*d20)/denom;
+ return [1-v-w,v,w];
+}
+function triangleMaterialIndex(geometry,faceIndex){
+ const offset=Math.max(0,faceIndex||0)*3;
+ for(const group of geometry.groups){
+  if(offset>=group.start&&offset<group.start+group.count)return group.materialIndex||0;
+ }
+ return 0;
+}
+function sampleSourceSurface(entry,point){
+ const hit=entry.surfaceBvh.closestPointToPoint(point,{});
+ if(!hit||hit.faceIndex===undefined)return null;
+ const geometry=entry.geometry,pos=geometry.attributes.position,index=geometry.index;
+ const tri=hit.faceIndex*3;
+ const ia=index?index.getX(tri):tri,ib=index?index.getX(tri+1):tri+1,ic=index?index.getX(tri+2):tri+2;
+ if(ic>=pos.count)return null;
+ const a=new THREE.Vector3().fromBufferAttribute(pos,ia);
+ const b=new THREE.Vector3().fromBufferAttribute(pos,ib);
+ const c=new THREE.Vector3().fromBufferAttribute(pos,ic);
+ const weights=barycentricWeights(hit.point,a,b,c);
+ const uvAttr=geometry.attributes.uv,colorAttr=geometry.attributes.color;
+ let uv=[point.x,point.y],color=[1,1,1];
+ if(uvAttr){
+  uv=[0,0];
+  for(let k=0;k<3;k++){const id=[ia,ib,ic][k];uv[0]+=uvAttr.getX(id)*weights[k];uv[1]+=uvAttr.getY(id)*weights[k];}
+ }
+ if(colorAttr){
+  color=[0,0,0];
+  for(let k=0;k<3;k++){const id=[ia,ib,ic][k];color[0]+=colorAttr.getX(id)*weights[k];color[1]+=colorAttr.getY(id)*weights[k];color[2]+=colorAttr.getZ(id)*weights[k];}
+ }
+ return {uv,color,materialIndex:triangleMaterialIndex(geometry,hit.faceIndex),distance:hit.distance};
+}
+function resolveFusionMaterial(entry,sourceMaterialIndex,registry){
+ const key=entry.id+':'+sourceMaterialIndex;
+ if(registry.map.has(key))return registry.map.get(key);
+ const original=Array.isArray(entry.material)?entry.material[sourceMaterialIndex]:entry.material;
+ const material=original?.clone?.()||new THREE.MeshStandardMaterial({color:0xb5a8b9,roughness:.8});
+ material.side=THREE.DoubleSide;
+ const index=registry.materials.length;
+ registry.materials.push(material);registry.map.set(key,index);
+ return index;
+}
+function closestEntryForPart(entries,partIndex,point){
+ let bestEntry=null,bestHit=null,bestDistance=Infinity;
+ for(const entry of entries){
+  if(entry.partIndex!==partIndex)continue;
+  // A bounding-box distance is a safe lower bound; skip BVH queries that cannot win.
+  if(entry.bounds.distanceToPoint(point)>bestDistance)continue;
+  const hit=entry.surfaceBvh.closestPointToPoint(point,{});
+  if(hit&&hit.distance<bestDistance){bestDistance=hit.distance;bestEntry=entry;bestHit=hit;}
+ }
+ return bestEntry?{entry:bestEntry,hit:bestHit}:null;
+}
+function projectedSurfaceSample(point,partIndex,entries,cache,precision){
+ const key=partIndex+':'+Math.round(point.x/precision)+','+Math.round(point.y/precision)+','+Math.round(point.z/precision);
+ if(cache.has(key))return cache.get(key);
+ let closest=closestEntryForPart(entries,partIndex,point);
+ if(!closest)closest=closestEntryForPart(entries,entries[0].partIndex,point);
+ const result=closest?{entry:closest.entry,sample:sampleSourceSurface(closest.entry,point)}:null;
+ cache.set(key,result);
+ return result;
+}
+function appendProjectedTriangle(triangle,partIndex,entries,registry,output,cache,precision){
+ const centroid=triangle[0].clone().add(triangle[1]).add(triangle[2]).multiplyScalar(1/3);
+ const centerResult=projectedSurfaceSample(centroid,partIndex,entries,cache,precision);
+ if(!centerResult)return;
+ const materialIndex=resolveFusionMaterial(centerResult.entry,centerResult.sample?.materialIndex||0,registry);
+ for(const point of triangle){
+  const result=projectedSurfaceSample(point,partIndex,entries,cache,precision);
+  const sample=result?.sample;
+  output.positions.push(point.x,point.y,point.z);
+  const uv=sample?.uv||[point.x,point.y];
+  output.uvs.push(uv[0],uv[1]);
+  const color=sample?.color||[1,1,1];
+  output.colors.push(color[0],color[1],color[2]);
+ }
+ output.materialIndices.push(materialIndex);
+}
+function orientTriangleOutward(triangle,field,grid){
+ const center=triangle[0].clone().add(triangle[1]).add(triangle[2]).multiplyScalar(1/3);
+ const gx=Math.round((center.x-grid.min.x)/grid.step-.5);
+ const gy=Math.round((center.y-grid.min.y)/grid.step-.5);
+ const gz=Math.round((center.z-grid.min.z)/grid.step-.5);
+ const at=(x,y,z)=>field[gridIndex(THREE.MathUtils.clamp(x,0,grid.nx-1),THREE.MathUtils.clamp(y,0,grid.ny-1),THREE.MathUtils.clamp(z,0,grid.nz-1),grid)];
+ const gradient=new THREE.Vector3(
+  at(gx+1,gy,gz)-at(gx-1,gy,gz),
+  at(gx,gy+1,gz)-at(gx,gy-1,gz),
+  at(gx,gy,gz+1)-at(gx,gy,gz-1)
+ );
+ const normal=triangle[1].clone().sub(triangle[0]).cross(triangle[2].clone().sub(triangle[0]));
+ if(normal.dot(gradient)<0)[triangle[1],triangle[2]]=[triangle[2],triangle[1]];
+ return triangle;
+}
+async function extractVoxelSurface(field,owner,grid,entries,token){
+ const {nx,ny,nz,step,min}=grid;
+ const cornerOffsets=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+ const tetrahedra=[[0,5,1,6],[0,1,2,6],[0,2,3,6],[0,3,7,6],[0,7,4,6],[0,4,5,6]];
+ const output={positions:[],uvs:[],colors:[],materialIndices:[]};
+ const registry={materials:[],map:new Map()};
+ const projectionCache=new Map(),projectionPrecision=step*.025;
+ const cornerValues=new Float32Array(8),cornerIds=new Int32Array(8),cornerPoints=Array.from({length:8},()=>new THREE.Vector3());
+ const interpolate=(a,b,va,vb)=>{
+  const t=THREE.MathUtils.clamp(va/(va-vb),0,1);
+  return a.clone().lerp(b,t);
+ };
+ let cubeCount=0;
+ for(let z=0;z<nz-1;z++){
+  for(let y=0;y<ny-1;y++){
+   for(let x=0;x<nx-1;x++){
+    let minValue=Infinity,maxValue=-Infinity;
+    for(let c=0;c<8;c++){
+     const o=cornerOffsets[c],gx=x+o[0],gy=y+o[1],gz=z+o[2];
+     const id=gridIndex(gx,gy,gz,grid),v=field[id];
+     cornerIds[c]=id;cornerValues[c]=v;
+     cornerPoints[c].set(min.x+(gx+.5)*step,min.y+(gy+.5)*step,min.z+(gz+.5)*step);
+     if(v<minValue)minValue=v;if(v>maxValue)maxValue=v;
+    }
+    if(minValue>0||maxValue<0)continue;
+    for(const tet of tetrahedra){
+     const inside=[],outside=[];
+     for(const c of tet){if(cornerValues[c]<0)inside.push(c);else outside.push(c);}
+     if(!inside.length||!outside.length)continue;
+     let ownerCorner=tet[0],bestAbs=Math.abs(cornerValues[ownerCorner]);
+     for(const c of tet){const a=Math.abs(cornerValues[c]);if(a<bestAbs){bestAbs=a;ownerCorner=c;}}
+     const partIndex=owner[cornerIds[ownerCorner]];
+     const tri=[];
+     if(inside.length===1){
+      const a=inside[0];
+      for(const b of outside)tri.push(interpolate(cornerPoints[a],cornerPoints[b],cornerValues[a],cornerValues[b]));
+      appendProjectedTriangle(orientTriangleOutward(tri,field,grid),partIndex,entries,registry,output,projectionCache,projectionPrecision);
+     }else if(inside.length===3){
+      const a=outside[0];
+      for(const b of inside)tri.push(interpolate(cornerPoints[a],cornerPoints[b],cornerValues[a],cornerValues[b]));
+      appendProjectedTriangle(orientTriangleOutward([tri[0],tri[2],tri[1]],field,grid),partIndex,entries,registry,output,projectionCache,projectionPrecision);
+     }else{
+      const a=inside[0],b=inside[1],c=outside[0],d=outside[1];
+      const ac=interpolate(cornerPoints[a],cornerPoints[c],cornerValues[a],cornerValues[c]);
+      const ad=interpolate(cornerPoints[a],cornerPoints[d],cornerValues[a],cornerValues[d]);
+      const bc=interpolate(cornerPoints[b],cornerPoints[c],cornerValues[b],cornerValues[c]);
+      const bd=interpolate(cornerPoints[b],cornerPoints[d],cornerValues[b],cornerValues[d]);
+      appendProjectedTriangle(orientTriangleOutward([ac,ad,bc],field,grid),partIndex,entries,registry,output,projectionCache,projectionPrecision);
+      appendProjectedTriangle(orientTriangleOutward([ad,bd,bc],field,grid),partIndex,entries,registry,output,projectionCache,projectionPrecision);
+     }
+     cubeCount++;
+    }
+   }
+  }
+  if(z%2===1){
+   if(token!==fusionJobId)throw new Error('融合工作已取消');
+   setFusionPhase(FUSION_PHASES.projecting,`表面重建與原材質投射 ${Math.round((z+1)/(nz-1)*100)}%`,((z+1)/(nz-1))*100);
+   await fusionYield();
+  }
+ }
+ if(output.positions.length<900)throw new Error('體素重建結果太小，無法形成完整寶可夢');
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(output.positions,3));
+ geometry.setAttribute('uv',new THREE.Float32BufferAttribute(output.uvs,2));
+ geometry.setAttribute('color',new THREE.Float32BufferAttribute(output.colors,3));
+ let current=-1,start=0,count=0;
+ for(const materialIndex of output.materialIndices){
+  if(materialIndex!==current){
+   if(count)geometry.addGroup(start,count,current);
+   current=materialIndex;start=count?start+count:start;count=0;
+  }
+  count+=3;
+ }
+ if(count)geometry.addGroup(start,count,current);
+ geometry.computeVertexNormals();
+ taubinSmoothByPosition(geometry,step*.10,3);
+ geometry.computeVertexNormals();
+ smoothNormalsByPosition(geometry,step*.12);
+ geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ return {geometry,materials:registry.materials,cubeCount,triangleCount:output.materialIndices.length};
+}
+function taubinSmoothByPosition(geometry,precision,iterations=3){
+ const pos=geometry.attributes.position,count=pos.count;
+ const ids=new Map(),uniquePoints=[],members=[],vertexToUnique=new Int32Array(count);
+ for(let i=0;i<count;i++){
+  const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+  const key=Math.round(x/precision)+','+Math.round(y/precision)+','+Math.round(z/precision);
+  let id=ids.get(key);
+  if(id===undefined){id=uniquePoints.length;ids.set(key,id);uniquePoints.push(new THREE.Vector3(x,y,z));members.push([]);}
+  members[id].push(i);vertexToUnique[i]=id;
+ }
+ const adjacency=Array.from({length:uniquePoints.length},()=>new Set());
+ for(let i=0;i+2<count;i+=3){
+  const a=vertexToUnique[i],b=vertexToUnique[i+1],c=vertexToUnique[i+2];
+  if(a!==b){adjacency[a].add(b);adjacency[b].add(a);}
+  if(b!==c){adjacency[b].add(c);adjacency[c].add(b);}
+  if(c!==a){adjacency[c].add(a);adjacency[a].add(c);}
+ }
+ let current=uniquePoints.map(p=>p.clone()),next=uniquePoints.map(p=>p.clone());
+ const smoothPass=coefficient=>{
+  for(let i=0;i<current.length;i++){
+   const neighbors=adjacency[i];
+   if(!neighbors.size){next[i].copy(current[i]);continue;}
+   const avg=new THREE.Vector3();
+   for(const n of neighbors)avg.add(current[n]);
+   avg.multiplyScalar(1/neighbors.size);
+   next[i].copy(current[i]).addScaledVector(avg.sub(current[i]),coefficient);
+  }
+  const swap=current;current=next;next=swap;
+ };
+ for(let i=0;i<iterations;i++){smoothPass(.28);smoothPass(-.30);}
+ for(let id=0;id<members.length;id++){
+  const p=current[id];
+  for(const vertex of members[id])pos.setXYZ(vertex,p.x,p.y,p.z);
+ }
+ pos.needsUpdate=true;
+ return geometry;
+}
+function fusionTopologyStats(geometry,precision){
+ const pos=geometry.attributes.position,index=geometry.index;
+ if(!pos)return {largestRatio:0,boundaryEdges:Infinity,nonManifoldEdges:Infinity,triangles:0};
+ const parent=[],rank=[],ids=new Map(),edges=new Map();
+ const getId=i=>{
+  const key=Math.round(pos.getX(i)/precision)+','+Math.round(pos.getY(i)/precision)+','+Math.round(pos.getZ(i)/precision);
+  if(ids.has(key))return ids.get(key);
+  const id=parent.length;ids.set(key,id);parent.push(id);rank.push(0);return id;
+ };
+ const find=x=>{while(parent[x]!==x){parent[x]=parent[parent[x]];x=parent[x];}return x;};
+ const union=(a,b)=>{a=find(a);b=find(b);if(a===b)return;if(rank[a]<rank[b])[a,b]=[b,a];parent[b]=a;if(rank[a]===rank[b])rank[a]++;};
+ const triCount=(index?index.count:pos.count)/3;
+ for(let t=0;t<triCount;t++){
+  const a=getId(index?index.getX(t*3):t*3);
+  const b=getId(index?index.getX(t*3+1):t*3+1);
+  const c=getId(index?index.getX(t*3+2):t*3+2);
+  union(a,b);union(b,c);
+  for(const [u,v] of [[a,b],[b,c],[c,a]]){
+   const key=u<v?u+':'+v:v+':'+u;edges.set(key,(edges.get(key)||0)+1);
+  }
+ }
+ const components=new Map();
+ for(let i=0;i<parent.length;i++){const r=find(i);components.set(r,(components.get(r)||0)+1);}
+ let largest=0;for(const n of components.values())if(n>largest)largest=n;
+ let boundaryEdges=0,nonManifoldEdges=0;
+ for(const n of edges.values()){if(n===1)boundaryEdges++;else if(n!==2)nonManifoldEdges++;}
+ return {largestRatio:parent.length?largest/parent.length:0,boundaryEdges,nonManifoldEdges,triangles:triCount,vertices:parent.length};
+}
+
+function restoreFusionForDetach(){
+ if(!fusionResult)return;
+ workspaceRoot.remove(fusionResult.mesh);
+ objects=objects.filter(o=>o!==fusionResult.mesh);
+ fusionResult.proxies.forEach(p=>{
+  workspaceRoot.remove(p);p.geometry?.dispose();p.material?.dispose();
+ });
+ fusionResult.sources.forEach(o=>{o.visible=true;});
+ fusionResult.mesh.geometry?.dispose();
+ const mats=Array.isArray(fusionResult.mesh.material)?fusionResult.mesh.material:[fusionResult.mesh.material];
+ mats.forEach(m=>m?.dispose?.());
+ fusionResult=null;
+ setFusionPhase(FUSION_PHASES.collecting,'融合已解除，等待重新組裝');
+ outline.selectedObjects=selected?[selected]:[];
+}
+async function systemAutoFuse(jobId=fusionJobId){
+ if(jobId!==fusionJobId)return;
+ if(fusionResult)return;
+ let sources=objects.filter(o=>o.visible!==false&&o.userData.kind==='extracted');
+ const torso=sources.find(o=>o.userData.partCategory==='torso');
+ if(sources.length<2){
+  setFusionPhase(FUSION_PHASES.collecting,'至少選擇身體與另一個部位');
+  return;
+ }
+ if(!torso){
+  setFusionPhase(FUSION_PHASES.waitingBody,'請先選擇身體，其他部位會以身體作為解剖中心');
+  return;
+ }
+ sources=[torso,...sources.filter(o=>o!==torso)];
+ fusionMachine.jobId=jobId;
+ let entries=[],pendingFused=null,pendingProxies=[],pendingMaterials=[];
+ try{
+  setFusionPhase(FUSION_PHASES.aligning,'依身體中心與部位類型計算解剖位置',0);
+  sources.forEach(resetPartAssemblyTransform);
+  for(const part of sources){if(part!==torso)alignForeignPartToTorso(part,torso);}
+  workspaceRoot.updateMatrixWorld(true);
+  await fusionYield();
+  if(jobId!==fusionJobId)throw new Error('融合工作已取消');
+
+  const {MeshBVH}=await import('https://esm.sh/three-mesh-bvh@0.8.3?external=three');
+  if(jobId!==fusionJobId)throw new Error('融合工作已取消');
+  entries=collectFusionSurfaceEntries(sources,MeshBVH);
+  const grid=createFusionGrid(entries,72);
+
+  setFusionPhase(FUSION_PHASES.voxelizing,'將各部位轉換為封閉體積',0);
+  const {field,owner,blendRadius}=await buildSmoothUnionField(sources,entries,grid,jobId);
+  if(jobId!==fusionJobId)throw new Error('融合工作已取消');
+
+  setFusionPhase(FUSION_PHASES.remeshing,'以平滑距離場建立單一外表面',0);
+  await fusionYield();
+  const remesh=await extractVoxelSurface(field,owner,grid,entries,jobId);
+  const geometry=remesh.geometry;
+  pendingMaterials=remesh.materials;
+  if(jobId!==fusionJobId){geometry.dispose();throw new Error('融合工作已取消');}
+
+  setFusionPhase(FUSION_PHASES.validating,'檢查連通性、封閉邊與非流形邊',0);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  if(!geometry.boundingBox||!Number.isFinite(geometry.boundingBox.min.x)){
+   geometry.dispose();throw new Error('重建表面座標無效');
+  }
+  const topology=fusionTopologyStats(geometry,grid.step*.10);
+  if(topology.largestRatio<.90){
+   geometry.dispose();
+   throw new Error('主要表面仍分離（連通率 '+Math.round(topology.largestRatio*100)+'%）');
+  }
+  if(topology.boundaryEdges>0||topology.nonManifoldEdges>0){
+   geometry.dispose();
+   throw new Error('表面尚未完全封閉（開放邊 '+topology.boundaryEdges+'，非流形邊 '+topology.nonManifoldEdges+'）');
+  }
+  if(jobId!==fusionJobId){geometry.dispose();throw new Error('融合工作已取消');}
+
+  const fusedMaterial=pendingMaterials.length?pendingMaterials:new THREE.MeshStandardMaterial({color:0xb5a8b9,roughness:.8});
+  const fused=new THREE.Mesh(geometry,fusedMaterial);
+  fused.name='PokemonVoxelRemeshedFusion';
+  fused.userData.kind='fusedSurface';
+  fused.userData.label='體素重塑融合模型';
+  fused.userData.fusionAlgorithm='voxel-sdf-smooth-union';
+  fused.userData.fusionPhase='ready';
+  fused.userData.voxelResolution=72;
+  fused.userData.voxelStep=grid.step;
+  fused.userData.blendRadius=blendRadius;
+  fused.userData.connectedRatio=topology.largestRatio;
+  fused.userData.watertight=topology.boundaryEdges===0&&topology.nonManifoldEdges===0;
+  fused.userData.triangleCount=topology.triangles;
+  fused.castShadow=true;fused.receiveShadow=true;
+  workspaceRoot.add(fused);pendingFused=fused;
+
+  const inverse=workspaceRoot.matrixWorld.clone().invert();
+  for(const source of sources){
+   source.updateWorldMatrix(true,true);
+   const proxyNodes=[];
+   source.traverse(node=>{
+    if(!node.isMesh||!node.geometry?.attributes?.position)return;
+    const proxyGeometry=node.geometry.clone();
+    proxyGeometry.applyMatrix4(node.matrixWorld).applyMatrix4(inverse);
+    const proxyMaterial=new THREE.MeshBasicMaterial({transparent:true,opacity:0,colorWrite:false,depthWrite:false,side:THREE.DoubleSide});
+    const proxy=new THREE.Mesh(proxyGeometry,proxyMaterial);
+    proxy.userData.sourceObject=source;
+    workspaceRoot.add(proxy);pendingProxies.push(proxy);
+   });
+  }
+  sources.forEach(source=>{source.visible=false;});
+  objects.push(fused);
+  fusionResult={mesh:fused,sources,proxies:pendingProxies,topology,grid:{step:grid.step,nx:grid.nx,ny:grid.ny,nz:grid.nz}};
+  pendingFused=null;pendingProxies=[];pendingMaterials=[];
+  if(selected)select(selected);
+  setFusionPhase(FUSION_PHASES.ready,`完成：${topology.triangles.toLocaleString()} 面，封閉網格，連通率 ${Math.round(topology.largestRatio*100)}%`,100);
+  toast('融合完成：已重新塑形為單一封閉網格');
+ }catch(err){
+  console.error('Voxel remesh fusion failed:',err);
+  if(pendingFused){
+   if(pendingFused.parent)pendingFused.parent.remove(pendingFused);
+   pendingFused.geometry?.dispose();
+  }
+  pendingProxies.forEach(proxy=>{
+   if(proxy.parent)proxy.parent.remove(proxy);
+   proxy.geometry?.dispose();proxy.material?.dispose();
+  });
+  pendingMaterials.forEach(m=>m?.dispose?.());
+  if(jobId===fusionJobId){
+   sources.forEach(source=>{source.visible=true;resetPartAssemblyTransform(source);});
+   const message=String(err?.message||err);
+   setFusionPhase(FUSION_PHASES.error,message,0);
+   toast('融合未完成：'+message.slice(0,62));
+  }
+ }finally{
+  entries.forEach(disposeFusionEntry);
+ }
+}
+
+function deleteSelectedObject(){
+ if(!selected){toast('請先選取一個部位');return;}
+ const target=selected;
+ invalidateFusionJob('刪除部位，舊融合工作已取消');
+ if(fusionResult)restoreFusionForDetach();
+ if(target.parent)target.parent.remove(target);
+ objects=objects.filter(o=>o!==target);
+ select(null);updateHint();toast('已刪除選取部位');
+ void systemAutoFuse(fusionJobId);
+}
+function getZoomTarget(){
+ if(selected&&selected.visible!==false)return selected;
+ for(let i=objects.length-1;i>=0;i--)if(objects[i].visible!==false)return objects[i];
+ return null;
+}
+function scaleZoomTarget(factor){
+ const obj=getZoomTarget();
+ if(!obj){toast('請先載入一隻寶可夢');return;}
+ const next=THREE.MathUtils.clamp(obj.scale.x*factor,.2,6);
+ obj.scale.setScalar(next);
+ obj.userData.label=obj.userData.label||'寶可夢';
+ select(obj);
+}
+function resetZoomTarget(){
+ const obj=getZoomTarget();
+ if(!obj){toast('請先載入一隻寶可夢');return;}
+ if(obj.userData.baseScale)obj.scale.copy(obj.userData.baseScale);
+ else obj.scale.setScalar(1);
+ select(obj);
+}
+
+const shelf=document.querySelector('#shelf'),partChoices=document.querySelector('#partChoices');
+let shelfCameraState=null;
+function getVisibleWorkspaceBounds(){
+ const box=new THREE.Box3();let has=false;
+ for(const obj of objects){
+  if(!obj||obj.visible===false)continue;
+  obj.updateMatrixWorld(true);
+  const b=new THREE.Box3().setFromObject(obj);
+  if(!b.isEmpty()){box.union(b);has=true;}
+ }
+ return has?box:null;
+}
+function frameWorkspaceBesideShelf(){
+ const bounds=getVisibleWorkspaceBounds();
+ if(!bounds){
+  camera.position.sub(controls.target).multiplyScalar(1.12).add(controls.target);
+  controls.update();return;
+ }
+ const center=bounds.getCenter(new THREE.Vector3());
+ const size=bounds.getSize(new THREE.Vector3());
+ const dir=camera.position.clone().sub(controls.target).normalize();
+ const shelfWidth=shelf.getBoundingClientRect().width||Math.min(218,innerWidth*.54);
+ const visibleFraction=THREE.MathUtils.clamp(1-shelfWidth/innerWidth,.34,.78);
+ const vFov=THREE.MathUtils.degToRad(camera.fov);
+ const hFov=2*Math.atan(Math.tan(vFov/2)*camera.aspect*visibleFraction);
+ const fitFov=Math.max(.12,Math.min(vFov*.78,hFov*.82));
+ const radius=Math.max(size.length()*.5,.8);
+ const distance=THREE.MathUtils.clamp(radius/Math.sin(fitFov/2)*1.12,5,32);
+ camera.updateMatrixWorld(true);
+ const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0).normalize();
+ const fullWidth=2*distance*Math.tan(vFov/2)*camera.aspect;
+ const screenOffset=(1-visibleFraction)*.5*fullWidth;
+ const target=center.clone().addScaledVector(right,-screenOffset);
+ controls.target.copy(target);
+ camera.position.copy(target).addScaledVector(dir,distance);
+ controls.update();
+}
+function openShelf(){
+ if(shelf.classList.contains('open'))return;
+ shelfCameraState={position:camera.position.clone(),target:controls.target.clone()};
+ shelf.classList.add('open');
+ requestAnimationFrame(()=>frameWorkspaceBesideShelf());
+}
+function closeShelf(){
+ if(!shelf.classList.contains('open'))return;
+ shelf.classList.remove('open');
+ if(shelfCameraState){
+  camera.position.copy(shelfCameraState.position);
+  controls.target.copy(shelfCameraState.target);
+  shelfCameraState=null;controls.update();
+ }
+}
+
+function toast(t){const e=document.querySelector('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),1450)}
+function classifyMeshName(name){
+ const raw=String(name||'').toLowerCase();
+ if(/wing|翅|翼|羽|feather|membrane|flap/.test(raw))return 'wings';
+ const n=raw.replace(/[^a-z0-9_]/g,'');
+ if(/wing|feather|membrane|flap/.test(n))return 'wings';
+ if(/head|face|eye|ear|jaw|mouth|horn|頭|臉/.test(n))return 'head';
+ if(/tail/.test(n))return 'tail';
+ if(/arm|hand|forearm|upperarm|palm|手臂|手掌/.test(n))return 'arms';
+ if(/leg|foot|feet|paw|thigh|calf|shin|ankle|腳|腿/.test(n))return 'legs';
+ if(/body|torso|chest|spine|pelvis|hips|腹|身體|軀幹/.test(n))return 'torso';
+ return 'other';
+}
+function inferPartCategoryFromBounds(partBounds,rootBounds){
+ const rs=rootBounds.getSize(new THREE.Vector3()),c=partBounds.getCenter(new THREE.Vector3()),rc=rootBounds.getCenter(new THREE.Vector3());
+ const yr=rs.y?((c.y-rootBounds.min.y)/rs.y):.5;
+ const xr=rs.x?(c.x-rc.x)/(rs.x*.5):0;
+ const zr=rs.z?(c.z-rc.z)/(rs.z*.5):0;
+ if(yr>.72)return 'head';
+ if(yr<.22)return 'legs';
+ if(zr<-.38&&yr<.84)return 'tail';
+ // Paired wings tend to be broad, lateral and behind the chest.
+ if(Math.abs(xr)>.34&&yr>.34&&yr<.90&&zr<.12)return 'wings';
+ if(Math.abs(xr)>.30&&yr>.27&&yr<.78)return 'arms';
+ if(yr>.20&&yr<.82)return 'torso';
+ return 'other';
+}
+function inferMeshCategoryFromBounds(partBounds,rootBounds){
+ const rs=rootBounds.getSize(new THREE.Vector3()),ps=partBounds.getSize(new THREE.Vector3());
+ const c=partBounds.getCenter(new THREE.Vector3()),rc=rootBounds.getCenter(new THREE.Vector3());
+ const yr=rs.y?(c.y-rootBounds.min.y)/rs.y:.5;
+ const xr=rs.x?(c.x-rc.x)/(rs.x*.5):0;
+ const zr=rs.z?(c.z-rc.z)/(rs.z*.5):0;
+ const lateralSpan=rs.x?ps.x/rs.x:0;
+ const isBroadWing=yr>.30&&yr<.88&&(
+   lateralSpan>.28 ||
+   (Math.abs(xr)>.25&&ps.x>ps.y*1.15&&ps.x>ps.z*.85)
+ );
+ if(isBroadWing&&(zr<.22||Math.abs(xr)>.58))return 'wings';
+ return inferPartCategoryFromBounds(partBounds,rootBounds);
+}
+function explicitBoneCategory(bone){
+ const raw=String(bone?.name||'').toLowerCase();
+ if(/wing|翅|翼|羽|feather|membrane|flap/.test(raw))return 'wings';
+ if(/head|face|eye|ear|jaw|mouth|horn/.test(raw))return 'head';
+ if(/tail/.test(raw))return 'tail';
+ if(/arm|hand|forearm|upperarm|palm/.test(raw))return 'arms';
+ if(/leg|foot|feet|paw|thigh|calf|shin|ankle/.test(raw))return 'legs';
+ if(/spine|pelvis|hips|chest|body|torso/.test(raw))return 'torso';
+ return 'other';
+}
+function classifyBoneName(bone,rootBounds){
+ const raw=bone?.name||'',named=classifyMeshName(raw);
+ if(named!=='other')return named;
+ const n=raw.toLowerCase(),p=new THREE.Vector3();
+ if(bone){bone.updateWorldMatrix(true,false);bone.getWorldPosition(p);workspaceRoot.worldToLocal(p);}
+ if(/wing/.test(n))return 'wings';
+ if(/arm|hand|forearm|palm/.test(n))return 'arms';
+ if(/leg|foot|paw|thigh|calf|shin|ankle/.test(n))return 'legs';
+ if(/spine|pelvis|hips|chest|body/.test(n))return 'torso';
+ if(bone){const tiny=new THREE.Box3(p.clone().addScalar(-.001),p.clone().addScalar(.001));return inferPartCategoryFromBounds(tiny,rootBounds);}
+ return 'other';
+}
+function isWholeBodyMesh(partBounds,rootBounds){
+ const a=partBounds.getSize(new THREE.Vector3()),b=rootBounds.getSize(new THREE.Vector3());
+ return (b.x?a.x/b.x:0)>.88&&(b.y?a.y/b.y:0)>.88&&(b.z?a.z/b.z:0)>.88;
+}
+function drawMeshPreview(canvas,template){
+ const w=144,h=100,previewScene=new THREE.Scene();previewScene.background=new THREE.Color(0xf5edf5);
+ previewScene.add(new THREE.HemisphereLight(0xffffff,0x9b899e,2));
+ const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(-3,4,5);previewScene.add(light);
+ const mesh=template.clone(false);mesh.position.set(0,0,0);previewScene.add(mesh);mesh.updateMatrixWorld(true);
+ const bounds=new THREE.Box3().setFromObject(mesh),size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+ mesh.position.sub(center);mesh.updateMatrixWorld(true);
+ const maxDim=Math.max(size.x,size.y,size.z,.2),cam=new THREE.PerspectiveCamera(35,w/h,.01,100);
+ cam.position.set(0,0,maxDim*2.7);cam.lookAt(0,0,0);
+ const target=new THREE.WebGLRenderTarget(w,h,{depthBuffer:true});
+ const oldTarget=renderer.getRenderTarget(),oldColor=renderer.getClearColor(new THREE.Color()),oldAlpha=renderer.getClearAlpha();
+ renderer.setRenderTarget(target);renderer.setClearColor(0xf5edf5,1);renderer.clear();renderer.render(previewScene,cam);
+ const pixels=new Uint8Array(w*h*4);renderer.readRenderTargetPixels(target,0,0,w,h,pixels);
+ renderer.setRenderTarget(oldTarget);renderer.setClearColor(oldColor,oldAlpha);target.dispose();
+ const ctx=canvas.getContext('2d'),img=ctx.createImageData(w,h);
+ for(let y=0;y<h;y++)img.data.set(pixels.subarray((h-1-y)*w*4,(h-y)*w*4),y*w*4);
+ canvas.width=w;canvas.height=h;ctx.putImageData(img,0,0);
+}
+function renderParts(){
+ const box=document.querySelector('#partChoices');box.innerHTML='';
+ const matches=extractedParts.filter(p=>p.category===activePart&&p.sourceName===activeSourceName);
+ if(!matches.length){
+  box.innerHTML=`<div class="empty"><b>這隻寶可夢尚未辨識出「${labels[activePart]||'部位'}」</b><p>模型已完成讀取，但來源網格沒有提供可獨立提取的這個部位。請返回清單改選其他寶可夢，或先試頭部、身體、手、腳。</p><button type="button" class="libraryBack" id="retryPartCatalog">返回寶可夢清單</button></div>`;
+  box.querySelector('#retryPartCatalog')?.addEventListener('click',()=>{
+   setSplitLibraryMode('catalog');
+   document.querySelector('#shelfTitle').textContent=labels[activePart]||'選擇寶可夢';
+   renderCatalog('split');
+  });
+  return;
+ }
+ matches.forEach(part=>{
+  const b=document.createElement('button');b.className='choice';
+  b.innerHTML=`<div class="preview"><canvas aria-label="${escapeHtml(part.label)} 的真實 3D 網格預覽"></canvas></div><b>${escapeHtml(part.label)}</b><small>${labels[part.category]||part.category} · ${escapeHtml(part.sourceName)}</small>`;
+  b.onclick=()=>addExtractedPart(part);box.append(b);drawMeshPreview(b.querySelector('canvas'),part.template);
+ });
+}
+
+function addExtractedPart(part){
+ // Explicitly cancel the previous fusion job before changing the part set.
+ invalidateFusionJob('新增部位，舊融合工作已取消');
+ if(fusionResult)restoreFusionForDetach();
+
+ // One slot per category. Choosing another source Pokémon replaces that slot.
+ const previous=objects.filter(o=>o.userData.kind==='extracted'&&o.userData.partCategory===part.category);
+ previous.forEach(disposeWorkspaceObject);
+
+ // The extracted geometry is already expressed in the shared display-plate coordinate
+ // system by extractStaticMeshParts/extractSkinnedMeshParts. Do not recenter, snap,
+ // translate, or independently scale it: that was the source of the random assembly.
+ const geometry=part.template.geometry.clone();
+ geometry.computeVertexNormals();
+ const cloneMaterial=m=>{
+  const c=m?.clone?.()||new THREE.MeshStandardMaterial({color:0xb5a8b9});
+  c.side=THREE.DoubleSide;
+  return c;
+ };
+ const partMaterial=Array.isArray(part.template.material)
+  ?part.template.material.map(cloneMaterial):cloneMaterial(part.template.material);
+ const mesh=new THREE.Mesh(geometry,partMaterial);
+ mesh.castShadow=true;mesh.receiveShadow=true;
+ const obj=new THREE.Group();
+ obj.add(mesh);
+ obj.position.set(0,0,0);
+ obj.scale.setScalar(1);
+ obj.userData.kind='extracted';
+ obj.userData.label=part.label;
+ obj.userData.partCategory=part.category;
+ obj.userData.sourceName=part.sourceName;
+ obj.userData.sourceBounds=part.sourceBounds?.clone?.()||null;
+ obj.userData.baseAssemblyPosition=obj.position.clone();
+ obj.userData.baseAssemblyQuaternion=obj.quaternion.clone();
+ obj.userData.baseAssemblyScale=obj.scale.clone();
+ obj.userData.sharedRig=true;
+ obj.userData.baseScale=new THREE.Vector3(1,1,1);
+ addWorkspaceObject(obj);
+
+ select(obj);closeShelf();updateHint();
+ const count=objects.filter(o=>o.userData.kind==='extracted'&&o.visible!==false).length;
+ if(count===1){
+  setFusionPhase(FUSION_PHASES.collecting,'已加入第一個部位，等待身體及其他部位');
+  toast('已加入第一個部位；選擇身體與其他部位後會自動融合');
+ }else{
+  toast('部位已加入，系統開始體素重塑融合…');
+  void systemAutoFuse(fusionJobId);
+ }
+}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function extractSkinnedMeshParts(node,rootBounds,sourceName){
+ const g=node.geometry,pos=g?.attributes?.position,skinI=g?.attributes?.skinIndex,skinW=g?.attributes?.skinWeight;
+ if(!pos||!skinI||!skinW||!node.skeleton)return 0;
+ node.updateMatrixWorld(true);node.skeleton.update();
+ const index=g.index,triCount=(index?index.count:pos.count)/3,buckets=new Map(),tmp=new THREE.Vector3();
+ const getIndex=i=>index?index.getX(i):i;
+ const materialArray=Array.isArray(node.material)?node.material:[node.material];
+ const dominantBone=v=>{
+  let best=-1,boneIndex=0;
+  for(let k=0;k<4;k++){const w=skinW.getComponent(v,k);if(w>best){best=w;boneIndex=skinI.getComponent(v,k);}}
+  return node.skeleton.bones[boneIndex]||null;
+ };
+ const weightedNamedCategory=v=>{
+  const scores={};
+  for(let k=0;k<4;k++){
+   const w=skinW.getComponent(v,k);if(w<=.08)continue;
+   const bone=node.skeleton.bones[skinI.getComponent(v,k)],cat=explicitBoneCategory(bone);
+   if(cat!=='other')scores[cat]=(scores[cat]||0)+w;
+  }
+  const ranked=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  return ranked[0]&&ranked[0][1]>=.16?ranked[0][0]:'other';
+ };
+ const worldToWorkspace=workspaceRoot.matrixWorld.clone().invert();
+ const skinnedWorld=v=>{tmp.fromBufferAttribute(pos,v);node.applyBoneTransform(v,tmp);return tmp.clone().applyMatrix4(node.matrixWorld).applyMatrix4(worldToWorkspace);};
+ const attrNames=Object.keys(g.attributes).filter(n=>!['position','normal','skinIndex','skinWeight','tangent'].includes(n));
+ for(let t=0;t<triCount;t++){
+  const ids=[getIndex(t*3),getIndex(t*3+1),getIndex(t*3+2)];
+  const cats=ids.map(v=>{
+   let cat=weightedNamedCategory(v);
+   if(cat==='other'){const bone=dominantBone(v);cat=classifyBoneName(bone,rootBounds);}
+   if(cat==='other'){const point=skinnedWorld(v);cat=inferPartCategoryFromBounds(new THREE.Box3(point.clone(),point.clone()),rootBounds);}
+   return cat;
+  });
+  const counts={};cats.forEach(c=>{if(c!=='other')counts[c]=(counts[c]||0)+1;});
+  let category=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]||'other';
+  if(category==='other'||category==='arms'){
+   const points=ids.map(skinnedWorld),bb=new THREE.Box3().setFromPoints(points),geometric=inferPartCategoryFromBounds(bb,rootBounds);
+   if(category==='other'||geometric==='wings')category=geometric;
+  }
+  if(category==='other')continue;
+  if(!buckets.has(category))buckets.set(category,new Map());
+  const materialIndex=getMaterialIndexForTriangle(g,t*3);
+  const materialBuckets=buckets.get(category);
+  if(!materialBuckets.has(materialIndex))materialBuckets.set(materialIndex,{positions:[],attrs:Object.fromEntries(attrNames.map(n=>[n,[]]))});
+  const bucket=materialBuckets.get(materialIndex);
+  for(const v of ids){
+   const wp=skinnedWorld(v);bucket.positions.push(wp.x,wp.y,wp.z);
+   for(const n of attrNames){const a=g.attributes[n];for(let k=0;k<a.itemSize;k++)bucket.attrs[n].push(a.getComponent(v,k));}
+  }
+ }
+ let added=0;
+ for(const [category,materialBuckets] of buckets){
+  const geometries=[],materials=[];
+  for(const [matIndex,bucket] of materialBuckets){
+   if(bucket.positions.length<9)continue;
+   const geometry=new THREE.BufferGeometry();
+   geometry.setAttribute('position',new THREE.Float32BufferAttribute(bucket.positions,3));
+   for(const name of attrNames){const attr=g.attributes[name];geometry.setAttribute(name,new THREE.BufferAttribute(new attr.array.constructor(bucket.attrs[name]),attr.itemSize,attr.normalized));}
+   geometry.computeVertexNormals();geometries.push(geometry);
+   const original=materialArray[matIndex]||materialArray[0];
+   const material=original?.clone?.()||new THREE.MeshStandardMaterial({color:0xb5a8b9});
+   material.side=THREE.DoubleSide;materials.push(material);
+  }
+  if(!geometries.length)continue;
+  let merged;
+  try{merged=geometries.length===1?geometries[0]:mergeGeometries(geometries,true);}
+  catch(error){console.warn('Skinned material merge fallback:',category,error);merged=geometries[0];}
+  geometries.forEach(g=>{if(g!==merged)g.dispose();});
+  if(!merged)continue;
+  smoothNormalsByPosition(merged,1e-5);
+  const template=new THREE.Mesh(merged,materials.length===1?materials[0]:materials);
+  template.userData.kind='extractedTemplate';
+  extractedParts.push({template,label:category+'（骨架分離）',category,sourceName,sourceBounds:rootBounds.clone()});
+  added++;
+ }
+ return added;
+}
+function mergeReadyGeometry(source){
+ const g=source.index?source.toNonIndexed():source.clone();
+ const p=g.attributes.position;
+ if(!p)return null;
+ const out=new THREE.BufferGeometry();
+ out.setAttribute('position',p.clone());
+ if(g.attributes.normal)out.setAttribute('normal',g.attributes.normal.clone());
+ else{g.computeVertexNormals();out.setAttribute('normal',g.attributes.normal.clone());}
+ if(g.attributes.uv)out.setAttribute('uv',g.attributes.uv.clone());
+ else out.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(p.count*2),2));
+ if(g.attributes.color)out.setAttribute('color',g.attributes.color.clone());
+ else{
+  const white=new Float32Array(p.count*3);white.fill(1);
+  out.setAttribute('color',new THREE.Float32BufferAttribute(white,3));
+ }
+ return out;
+}
+
+function getObjectBoundsInWorkspace(obj){
+ obj.updateWorldMatrix(true,true);
+ const worldBounds=new THREE.Box3().setFromObject(obj);
+ const inverse=workspaceRoot.matrixWorld.clone().invert();
+ const localBounds=new THREE.Box3();
+ for(const x of [worldBounds.min.x,worldBounds.max.x])
+  for(const y of [worldBounds.min.y,worldBounds.max.y])
+   for(const z of [worldBounds.min.z,worldBounds.max.z])
+    localBounds.expandByPoint(new THREE.Vector3(x,y,z).applyMatrix4(inverse));
+ return localBounds;
+}
+function getMaterialIndexForTriangle(geometry,triangleOffset){
+ for(const group of (geometry.groups||[])){
+  if(triangleOffset>=group.start&&triangleOffset<group.start+group.count)return group.materialIndex||0;
+ }
+ return 0;
+}
+function classifyNodeHierarchy(node){
+ let current=node;
+ while(current){
+  const category=classifyMeshName(current.name||'');
+  if(category!=='other')return category;
+  current=current.parent;
+ }
+ return 'other';
+}
+function extractStaticMeshParts(node,rootBounds,sourceName){
+ const geometry=node.geometry,pos=geometry?.attributes?.position;
+ if(!pos||pos.count<3)return 0;
+ node.updateWorldMatrix(true,false);
+ const index=geometry.index,triCount=(index?index.count:pos.count)/3;
+ const nodeBounds=new THREE.Box3().setFromObject(node);
+ const wholeNode=isWholeBodyMesh(nodeBounds,rootBounds);
+ const meshCategory=wholeNode?'other':classifyNodeHierarchy(node);
+ const materialArray=Array.isArray(node.material)?node.material:[node.material];
+ const worldToWorkspace=workspaceRoot.matrixWorld.clone().invert();
+ const byCategory=new Map();
+ const getIndex=i=>index?index.getX(i):i;
+ const getVertex=i=>new THREE.Vector3().fromBufferAttribute(pos,i).applyMatrix4(node.matrixWorld).applyMatrix4(worldToWorkspace);
+ for(let t=0;t<triCount;t++){
+  const offset=t*3,ids=[getIndex(offset),getIndex(offset+1),getIndex(offset+2)];
+  const pts=ids.map(getVertex),triBounds=new THREE.Box3().setFromPoints(pts);
+  const matIndex=getMaterialIndexForTriangle(geometry,offset);
+  const mat=materialArray[matIndex]||materialArray[0];
+  const materialCategory=classifyMeshName(mat?.name||'');
+  const namedCategory=meshCategory!=='other'?meshCategory:
+    (!wholeNode&&materialCategory!=='other'?materialCategory:'other');
+  const category=namedCategory!=='other'?namedCategory:inferMeshCategoryFromBounds(triBounds,rootBounds);
+  if(category==='other')continue;
+  if(!byCategory.has(category))byCategory.set(category,new Map());
+  const materialBuckets=byCategory.get(category);
+  if(!materialBuckets.has(matIndex))materialBuckets.set(matIndex,{positions:[],uvs:[],colors:[]});
+  const bucket=materialBuckets.get(matIndex);
+  for(let k=0;k<3;k++){
+   const v=ids[k],p=pts[k];
+   bucket.positions.push(p.x,p.y,p.z);
+   if(geometry.attributes.uv)bucket.uvs.push(geometry.attributes.uv.getX(v),geometry.attributes.uv.getY(v));
+   if(geometry.attributes.color){
+    const color=geometry.attributes.color;
+    bucket.colors.push(color.getX(v),color.getY(v),color.getZ(v));
+   }
+  }
+ }
+ let added=0;
+ for(const [category,materialBuckets] of byCategory){
+  const geometries=[],materials=[];
+  for(const [matIndex,bucket] of materialBuckets){
+   if(bucket.positions.length<9)continue;
+   const partGeometry=new THREE.BufferGeometry();
+   partGeometry.setAttribute('position',new THREE.Float32BufferAttribute(bucket.positions,3));
+   if(bucket.uvs.length)partGeometry.setAttribute('uv',new THREE.Float32BufferAttribute(bucket.uvs,2));
+   if(bucket.colors.length)partGeometry.setAttribute('color',new THREE.Float32BufferAttribute(bucket.colors,3));
+   partGeometry.computeVertexNormals();
+   // Keep the true source surface open; fusion closes only cut boundary loops
+   // in a separate volume proxy, never by extruding the whole surface into a shell.
+   geometries.push(mergeReadyGeometry(partGeometry));
+   const sourceMaterial=materialArray[matIndex]||materialArray[0];
+   const clone=sourceMaterial?.clone?.()||new THREE.MeshStandardMaterial({color:0xb5a8b9});
+   clone.side=THREE.DoubleSide;
+   materials.push(clone);
+  }
+  if(!geometries.length)continue;
+  let merged;
+  try{merged=geometries.length===1?geometries[0]:mergeGeometries(geometries,true);}
+  catch(err){console.warn('Static triangle merge fallback:',category,err);merged=geometries[0];}
+  if(!merged)continue;
+  smoothNormalsByPosition(merged,1e-5);
+  const template=new THREE.Mesh(merged,materials.length===1?materials[0]:materials);
+  template.userData.kind='extractedTemplate';
+  extractedParts.push({template,label:(labels[category]||'部位')+'（自動分類）',category,sourceName,sourceBounds:rootBounds.clone()});
+  added++;
+ }
+ return added;
+}
+
+function extractSelectedModel(auto=false){
+ if(!selected||selected.userData.kind!=='whole'){toast('請先載入一隻完整模型');return 0;}
+ const root=selected;root.updateMatrixWorld(true);
+ const rootBounds=getObjectBoundsInWorkspace(root),sourceName=root.userData.sourcePokemon||root.userData.label||'寶可夢模型';
+ const before=extractedParts.length,meshNodes=[];
+ root.traverse(node=>{if(node.isMesh)meshNodes.push(node);});
+ for(const node of meshNodes){
+  if(node.isSkinnedMesh)extractSkinnedMeshParts(node,rootBounds,sourceName);
+  else extractStaticMeshParts(node,rootBounds,sourceName);
+ }
+ const added=extractedParts.length-before;
+ // Templates contain independent geometry/material copies; release the original GLB scene.
+ if(root.parent)root.parent.remove(root);
+ objects=objects.filter(o=>o!==root);
+ const rootGeometries=new Set(),rootMaterials=new Set();
+ root.traverse(node=>{
+  if(node.geometry)rootGeometries.add(node.geometry);
+  if(node.material)(Array.isArray(node.material)?node.material:[node.material]).forEach(m=>{if(m)rootMaterials.add(m);});
+ });
+ rootGeometries.forEach(g=>g.dispose());
+ rootMaterials.forEach(m=>m.dispose?.());
+ select(null);
+ if(added>0){
+  setSplitLibraryMode('parts');
+  document.querySelector('#extractStatus').textContent=`${sourceName}：分離 ${added} 組獨立部位（左右對稱部位已合併）`;
+  toast('已分離 '+added+' 組部位');
+ }else{
+  setSplitLibraryMode('catalog');
+  document.querySelector('#extractStatus').textContent='這隻模型沒有可分離的獨立部位；已取消加入完整模型。';
+  toast('這隻模型無法分離成部位，已取消加入整隻模型');
+ }
+ return added;
+}
+function setSplitLibraryMode(mode){
+ if(!['catalog','parts'].includes(mode))throw new Error('未知部位清單模式：'+mode);
+ libraryMachine.mode=mode;libraryMachine.sourceName=activeSourceName||'';libraryMachine.part=activePart;libraryMachine.revision++;
+ splitLibraryMode=mode;
+ document.querySelector('#splitCatalog').hidden=mode!=='catalog';
+ document.querySelector('#partLibrary').hidden=mode!=='parts';
+ if(mode==='parts')renderParts();
+}
+function normalizeModel(root){
+ root.updateMatrixWorld(true);
+ const box=new THREE.Box3().setFromObject(root);
+ const size=box.getSize(new THREE.Vector3());
+ const center=box.getCenter(new THREE.Vector3());
+ // Shared rig: normalize by height, not wingspan/width. This keeps body/head/limb
+ // coordinates comparable across species instead of shrinking wide Pokémon.
+ const height=Math.max(size.y,.001),scale=2.8/height;
+ if(root.children[0])root.children[0].position.sub(center);
+ root.scale.setScalar(scale);
+ root.position.set(0,(height*scale)/2,0);
+ root.userData.centerPivot=true;
+ root.userData.baseScale=root.scale.clone();
+ root.userData.sharedRig={height:2.8,sourceBounds:{x:size.x,y:size.y,z:size.z}};
+ root.updateMatrixWorld(true);
+}
+function addWholeModel(url,name,autoSplit=false){
+ if(modelLoadMachine.phase==='loading'||modelLoadMachine.phase==='processing')setModelLoadPhase('cancelled','已取消上一個模型載入');
+ const loadId=++modelLoadJobId;
+ modelLoadMachine.jobId=loadId;modelLoadMachine.name=name;modelLoadMachine.progress=0;
+ setModelLoadPhase('loading','正在下載 '+name+' 的真實 3D 模型…',0);
+ if(autoSplit){
+  invalidateFusionJob('切換寶可夢來源');
+  if(fusionResult)restoreFusionForDetach();
+  activeSourceName=name;extractedParts=[];setSplitLibraryMode('catalog');
+  document.querySelector('#shelfTitle').textContent=name;
+ }
+ toast('正在下載 '+name+' 的真實 3D 模型…');
+ gltfLoader.load(url,gltf=>{
+  if(loadId!==modelLoadJobId){disposeLoadedScene(gltf.scene);return;}
+  setModelLoadPhase('processing',name+' 模型下載完成，正在整理 3D 網格…',100);
+  try{
+   const model=new THREE.Group();model.add(gltf.scene);normalizeModel(model);
+   model.userData.kind='whole';model.userData.label=name+'（完整模型）';model.userData.sourcePokemon=name;
+   model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+   model.userData.baseScale=model.scale.clone();addWorkspaceObject(model);select(model);updateHint();
+   if(autoSplit){
+    const n=extractSelectedModel(true);
+    if(n>0){setSplitLibraryMode('parts');document.querySelector('#shelfTitle').textContent=name;}
+   }else{closeShelf();toast(name+'完整模型已加入工作區');}
+   if(loadId===modelLoadJobId)setModelLoadPhase('ready',name+' 模型已準備完成',100);
+  }catch(err){
+   console.error('Model scene setup failed:',err);
+   if(loadId===modelLoadJobId)setModelLoadPhase('error','模型已下載，但整理網格失敗：'+String(err?.message||err).slice(0,70));
+   toast('模型已下載，但加入場景失敗：'+String(err?.message||err).slice(0,32));
+  }
+ },xhr=>{
+  if(loadId!==modelLoadJobId)return;
+  if(xhr?.total>0){const pct=Math.round(xhr.loaded/xhr.total*100);setModelLoadPhase('loading',name+' 模型下載中 '+pct+'%',pct);}
+ },err=>{
+  if(loadId!==modelLoadJobId)return;
+  console.error('GLB load failed:',url,err);
+  const detail=String(err?.message||err||'未知錯誤');
+  setModelLoadPhase('error','模型匯入失敗：'+detail.slice(0,100));
+  toast(detail.toLowerCase().includes('draco')?'Draco 解碼失敗，請稍後再試':detail.toLowerCase().includes('404')?'模型檔案不存在，請改選其他模型':'模型下載／解碼失敗：'+detail.slice(0,30));
+ });
+}
+function renderCatalog(target){
+ const input=document.querySelector('#splitSearch');
+ const list=document.querySelector('#splitCatalog');
+ if(!list)return;
+ const q=(input?.value||'').trim().toLowerCase();
+ const arr=modelCatalog.filter(x=>x.name.toLowerCase().includes(q)||String(x.id).includes(q)).slice(0,120);
+ list.innerHTML='';
+ if(!arr.length){list.innerHTML='<div class="empty">找不到</div>';return;}
+ arr.forEach(p=>{
+  const b=document.createElement('button');b.className='choice modelChoice';b.title=p.name;b.setAttribute('aria-label',p.name);
+  b.innerHTML=`<div class="preview"><model-viewer src="${escapeHtml(p.url)}" alt="${escapeHtml(p.name)}" loading="lazy" reveal="auto" camera-controls disable-zoom disable-pan interaction-prompt="none" shadow-intensity="0.55" exposure="1.1" camera-orbit="0deg 75deg 2.8m"></model-viewer></div>`;
+  b.addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();addWholeModel(p.url,p.name,true);});
+  list.append(b);
+ });
+}
+function makeFallbackCatalog(){
+ const names=[
+  'Bulbasaur','Ivysaur','Venusaur','Charmander','Charmeleon','Charizard',
+  'Squirtle','Wartortle','Blastoise','Caterpie','Metapod','Butterfree',
+  'Weedle','Kakuna','Beedrill','Pidgey','Pidgeotto','Pidgeot',
+  'Rattata','Raticate','Spearow','Fearow','Ekans','Arbok','Pikachu',
+  'Raichu','Sandshrew','Sandslash','Nidoran♀','Nidorina','Nidoqueen',
+  'Nidoran♂','Nidorino','Nidoking','Clefairy','Clefable','Vulpix',
+  'Ninetales','Jigglypuff','Wigglytuff','Zubat','Golbat','Oddish',
+  'Gloom','Vileplume','Paras','Parasect','Venonat','Venomoth',
+  'Diglett','Dugtrio','Meowth','Persian','Psyduck','Golduck',
+  'Mankey','Primeape','Growlithe','Arcanine','Poliwag','Poliwhirl',
+  'Poliwrath','Abra','Kadabra','Alakazam','Machop','Machoke','Machamp',
+  'Bellsprout','Weepinbell','Victreebel','Tentacool','Tentacruel',
+  'Geodude','Graveler','Golem','Ponyta','Rapidash','Slowpoke',
+  'Slowbro','Magnemite','Magneton','Farfetchd','Doduo','Dodrio',
+  'Seel','Dewgong','Grimer','Muk','Shellder','Cloyster','Gastly',
+  'Haunter','Gengar','Onix','Drowzee','Hypno','Krabby','Kingler',
+  'Voltorb','Electrode','Exeggcute','Exeggutor','Cubone','Marowak',
+  'Hitmonlee','Hitmonchan','Lickitung','Koffing','Weezing','Rhyhorn',
+  'Rhydon','Chansey','Tangela','Kangaskhan','Horsea','Seadra',
+  'Goldeen','Seaking','Staryu','Starmie','Mr Mime','Scyther',
+  'Jynx','Electabuzz','Magmar','Pinsir','Tauros','Magikarp',
+  'Gyarados','Lapras','Ditto','Eevee','Vaporeon','Jolteon',
+  'Flareon','Porygon','Omanyte','Omastar','Kabuto','Kabutops',
+  'Aerodactyl','Snorlax','Articuno','Zapdos','Moltres','Dratini',
+  'Dragonair','Dragonite','Mewtwo','Mew'
+ ];
+ return names.map((name,i)=>({
+  id:i+1,name,url:`https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt/regular/${i+1}.glb`,form:'regular'
+ }));
+}
+async function loadCatalog(){
+ if(['loading','ready','fallback-ready'].includes(catalogMachine.phase))return;
+ catalogMachine.phase='loading';catalogMachine.message='正在載入寶可夢清單…';
+ const splitList=document.querySelector('#splitCatalog'),wholeList=document.querySelector('#wholeList');
+ // Show usable choices immediately; the remote catalogue may be asleep or unavailable.
+ modelCatalog=makeFallbackCatalog();
+ catalogMachine.phase='fallback-ready';catalogMachine.count=modelCatalog.length;catalogMachine.message='已使用內建清單';
+ renderCatalog('split');
+ document.querySelector('#hint').textContent=`已準備 ${modelCatalog.length} 隻寶可夢清單｜選擇下方部位，再選擇寶可夢`;
+ try{
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),10000);
+  const res=await fetch('https://pokemon-3d-api.onrender.com/v1/pokemon',{signal:controller.signal});
+  clearTimeout(timeout);
+  if(!res.ok)throw new Error('API '+res.status);
+  const data=await res.json(),arr=data.pokemon||data;
+  const remote=[];
+  for(const p of arr){
+   const forms=p.forms||[];
+   const f=forms.find(x=>(x.formName||'').toLowerCase()==='regular')||forms[0];
+   if(f?.model){
+    const form=f.formName||'regular';
+    const canonical=form.toLowerCase()==='regular'
+      ? `https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt/regular/${p.id}.glb`
+      : f.model;
+    remote.push({id:p.id,name:f.name||p.name||('Pokémon '+p.id),url:canonical,form});
+   }
+  }
+  if(remote.length){
+   modelCatalog=remote.sort((a,b)=>Number(a.id)-Number(b.id));
+   catalogMachine.phase='ready';catalogMachine.count=modelCatalog.length;catalogMachine.message='遠端清單已載入';
+   renderCatalog('split');
+   document.querySelector('#hint').textContent=`已載入 ${modelCatalog.length} 隻寶可夢模型清單`;
+  }
+ }catch(e){
+  console.warn('Remote catalogue unavailable; using built-in list.',e);
+  catalogMachine.phase='fallback-ready';catalogMachine.count=modelCatalog.length;catalogMachine.message='遠端清單不可用，使用內建清單';
+  document.querySelector('#hint').textContent=`已使用內建寶可夢清單（${modelCatalog.length} 隻）；可直接選擇`;
+ }
+}
+document.querySelector('#splitSearch').addEventListener('input',()=>renderCatalog('split'));
+function activateCategoryButton(button){
+ activePart=button.dataset.part;
+ document.querySelectorAll('.cat').forEach(x=>x.classList.toggle('active',x===button));
+ document.querySelector('#shelfTitle').textContent=labels[activePart]||'選擇寶可夢';
+ openShelf();
+ if(activeSourceName&&extractedParts.some(p=>p.sourceName===activeSourceName)){
+  setSplitLibraryMode('parts');
+  renderParts();
+ }else{
+  setSplitLibraryMode('catalog');
+  if(modelCatalog.length)renderCatalog('split');
+  else loadCatalog();
+ }
+ toast(`已開啟${labels[activePart]||'部位'}清單`);
+}
+document.querySelectorAll('.cat').forEach(b=>{
+ b.addEventListener('click',ev=>{if(b.dataset.v29Handled==='1'){delete b.dataset.v29Handled;return;}ev.preventDefault();ev.stopPropagation();activateCategoryButton(b);});
+ b.addEventListener('pointerup',ev=>{ev.stopPropagation();});
+});
+document.querySelector('#closeShelf').onclick=()=>closeShelf();
+document.querySelector('#backToCatalog').onclick=()=>{
+ setSplitLibraryMode('catalog');
+ document.querySelector('#shelfTitle').textContent='選擇寶可夢';
+ renderCatalog('split');
+};
+document.querySelector('#splitSearch').addEventListener('input',()=>renderCatalog('split'));
+
+// Interaction model:
+// 1-finger blank drag = orbit camera; blank-space pinch = zoom camera.
+// Tap a model = select only; blank-area drag = orbit; blank-area pinch = zoom.
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),activePointers=new Map();
+const GESTURE_TRANSITIONS={idle:['idle','orbit','part-touch','camera-pinch','blocked-multi-touch'],orbit:['orbit','idle','camera-pinch','part-touch','blocked-multi-touch'],'part-touch':['part-touch','idle','orbit','camera-pinch','blocked-multi-touch'],'camera-pinch':['camera-pinch','idle','orbit','part-touch','blocked-multi-touch'],'blocked-multi-touch':['blocked-multi-touch','idle','orbit','part-touch','camera-pinch']};
+const gestureMachine={mode:'idle',pointerCount:0,history:[]};
+let gesture=null;
+function setGestureMode(mode){
+ if(!(GESTURE_TRANSITIONS[gestureMachine.mode]||[]).includes(mode)){console.warn('Ignored invalid gesture transition:',gestureMachine.mode,'→',mode);return;}
+ if(gestureMachine.mode!==mode){gestureMachine.history.push({from:gestureMachine.mode,to:mode,at:Date.now()});if(gestureMachine.history.length>30)gestureMachine.history.shift();}
+ gestureMachine.mode=mode;gestureMachine.pointerCount=activePointers.size;
+ controls.enabled=mode==='idle'||mode==='orbit';
+}
+function syncGestureState(){
+ const count=activePointers.size;gestureMachine.pointerCount=count;
+ if(count===0){gesture=null;setGestureMode('idle');return;}
+ if(count===1){const only=[...activePointers.values()][0];gesture=null;setGestureMode(only.obj?'part-touch':'orbit');return;}
+ const points=[...activePointers.values()].slice(0,2);
+ if(points.every(p=>!p.obj)){
+  const distance=Math.max(1,Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y));
+  gesture={target:'camera',distance,cameraDistance:camera.position.distanceTo(controls.target)};setGestureMode('camera-pinch');
+ }else{gesture=null;setGestureMode('blocked-multi-touch');}
+}
+function cast(ev){const r=renderer.domElement.getBoundingClientRect();pointer.x=(ev.clientX-r.left)/r.width*2-1;pointer.y=-((ev.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(pointer,camera);}
+function pickObject(ev){
+ cast(ev);
+ if(fusionResult){
+  const hits=raycaster.intersectObjects(fusionResult.proxies,false);
+  if(hits.length)return hits[0].object.userData.sourceObject||null;
+ }
+ const meshes=[];objects.forEach(g=>{if(g.visible!==false)g.traverse(o=>{if(o.isMesh&&o.visible!==false)meshes.push(o)});});
+ const hits=raycaster.intersectObjects(meshes,false);if(!hits.length)return null;
+ let n=hits[0].object;while(n&&!objects.includes(n))n=n.parent;return n||null;
+}
+function cameraZoomTo(distance){
+ const dir=camera.position.clone().sub(controls.target).normalize();
+ const d=THREE.MathUtils.clamp(distance,3.4,28);
+ camera.position.copy(controls.target).addScaledVector(dir,d);
+ controls.update();
+}
+function zoomCameraBy(factor){cameraZoomTo(camera.position.distanceTo(controls.target)*factor);}
+
+renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+renderer.domElement.addEventListener('dblclick',e=>{e.preventDefault();e.stopPropagation();});
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();zoomCameraBy(e.deltaY>0?1.09:.92);},{passive:false});
+renderer.domElement.addEventListener('pointerdown',ev=>{
+ const obj=pickObject(ev);activePointers.set(ev.pointerId,{x:ev.clientX,y:ev.clientY,obj});
+ if(obj)select(obj);else if(activePointers.size===1)select(null);
+ syncGestureState();
+},true);
+renderer.domElement.addEventListener('pointermove',ev=>{
+ if(activePointers.has(ev.pointerId)){
+  const old=activePointers.get(ev.pointerId);
+  activePointers.set(ev.pointerId,{...old,x:ev.clientX,y:ev.clientY});
+ }
+ if(activePointers.size>=2&&gesture&&gestureMachine.mode==='camera-pinch'){
+  const pts=[...activePointers.values()].slice(0,2);
+  const dist=Math.max(1,Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y));
+  if(gesture.target==='camera')cameraZoomTo(gesture.cameraDistance*gesture.distance/dist);
+  return;
+ }
+});
+function releasePointer(ev){activePointers.delete(ev.pointerId);syncGestureState();}
+renderer.domElement.addEventListener('pointerup',releasePointer);
+renderer.domElement.addEventListener('pointercancel',releasePointer);
+document.querySelector('#zoomIn').addEventListener('click',()=>scaleZoomTarget(1.18));
+document.querySelector('#zoomOut').addEventListener('click',()=>scaleZoomTarget(1/1.18));
+document.querySelector('#zoomReset').addEventListener('click',resetZoomTarget);
+document.querySelector('#fuseBtn').title='選擇身體及其他部位後，自動體素化、平滑融合與重新塑形';setFusionPhase(FUSION_PHASES.idle,'等待選擇部位');
+
+const settingsModal=document.querySelector('#settingsModal');
+const outlineDefaults={enabled:true,strength:5.2,glow:.9,thickness:2.1};
+function applyOutlineSettings(){
+ const enabled=document.querySelector('#outlineEnabled').checked;
+ outline.enabled=enabled;
+ outline.edgeStrength=Number(document.querySelector('#outlineStrength').value);
+ outline.edgeGlow=Number(document.querySelector('#outlineGlow').value);
+ outline.edgeThickness=Number(document.querySelector('#outlineThickness').value);
+ document.querySelector('#outlineStrengthValue').textContent=outline.edgeStrength.toFixed(1);
+ document.querySelector('#outlineGlowValue').textContent=outline.edgeGlow.toFixed(1);
+ document.querySelector('#outlineThicknessValue').textContent=outline.edgeThickness.toFixed(1);
+}
+document.querySelector('#settingsBtn').onclick=()=>settingsModal.classList.add('show');
+document.querySelector('#closeSettings').onclick=()=>settingsModal.classList.remove('show');
+['outlineEnabled','outlineStrength','outlineGlow','outlineThickness'].forEach(id=>{
+ document.querySelector('#'+id).addEventListener('input',applyOutlineSettings);
+ document.querySelector('#'+id).addEventListener('change',applyOutlineSettings);
+});
+document.querySelector('#frontViewReset').onclick=()=>{controls.target.set(0,VIEW_PIVOT_Y,0);camera.position.set(0,VIEW_PIVOT_Y,18);controls.update();toast('已恢復正面平視遠距視角');};
+document.querySelector('#resetSettings').onclick=()=>{
+ document.querySelector('#outlineEnabled').checked=outlineDefaults.enabled;
+ document.querySelector('#outlineStrength').value=outlineDefaults.strength;
+ document.querySelector('#outlineGlow').value=outlineDefaults.glow;
+ document.querySelector('#outlineThickness').value=outlineDefaults.thickness;
+ applyOutlineSettings();toast('已恢復預設設定');
+};
+applyOutlineSettings();
+
+document.querySelector('#partDeleteButton').addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();deleteSelectedObject();});
+
+
+document.querySelector('#resetBtn').onclick=()=>{
+ invalidateFusionJob('工作區已重置');
+ if(modelLoadMachine.phase==='loading'||modelLoadMachine.phase==='processing'){
+  setModelLoadPhase('cancelled','工作區重置，模型載入已取消');modelLoadJobId++;
+ }
+ if(fusionResult)restoreFusionForDetach();
+ objects.forEach(o=>{if(o.parent)o.parent.remove(o);});
+ objects=[];
+ extractedParts=[];activeSourceName='';splitLibraryMode='catalog';
+ libraryMachine.mode='catalog';libraryMachine.sourceName='';libraryMachine.revision++;
+ setFusionPhase(FUSION_PHASES.idle,'工作區已清空');
+ setSplitLibraryMode('catalog');select(null);closeShelf();updateHint();
+ toast('工作區與零件清單已清空');
+};
+
+// Album stores current build metadata locally.
+const albumKey='pokemonFusionAlbumV22';function readAlbum(){try{return JSON.parse(localStorage.getItem(albumKey)||'[]')}catch{return[]}}
+function renderAlbum(){const arr=readAlbum(),box=document.querySelector('#albumItems');box.innerHTML='';if(!arr.length){box.innerHTML='<div class="empty">圖冊還沒有卡牌。先組裝作品再收藏。</div>';return;}arr.forEach(card=>{const d=document.createElement('div');d.className='albumItem';d.innerHTML=`<b>🌟 ${card.name}</b><small>${card.count} 個模型／零件 · ${new Date(card.date).toLocaleDateString()}</small>`;box.append(d);});}
+document.querySelector('#albumBtn').onclick=()=>{renderAlbum();document.querySelector('#albumModal').classList.add('show');};document.querySelector('#closeAlbum').onclick=()=>document.querySelector('#albumModal').classList.remove('show');
+document.querySelector('#saveCard').onclick=()=>{if(objects.length<1){toast('先加入模型或零件');return;}const a=readAlbum();a.unshift({name:'我的混合寶可夢 '+(a.length+1),count:objects.length,date:Date.now(),items:objects.map(o=>({label:o.userData.label,kind:o.userData.kind,position:o.position.toArray(),rotation:o.rotation.toArray(),scale:o.scale.toArray()}))});localStorage.setItem(albumKey,JSON.stringify(a));renderAlbum();toast('已收藏卡牌');};
+function positionPartDeleteButton(){
+ const button=document.querySelector('#partDeleteButton');
+ if(!button)return;
+ let target=selected;
+ if(fusionResult&&selected)target=fusionResult.proxies.find(p=>p.userData.sourceObject===selected)||selected;
+ if(!target||target.visible===false){button.classList.remove('show');return;}
+ target.updateWorldMatrix(true,true);
+ const box=new THREE.Box3().setFromObject(target);
+ if(box.isEmpty()){button.classList.remove('show');return;}
+ const top=new THREE.Vector3((box.min.x+box.max.x)/2,box.max.y,(box.min.z+box.max.z)/2);
+ top.project(camera);
+ if(top.z< -1||top.z>1){button.classList.remove('show');return;}
+ const x=THREE.MathUtils.clamp((top.x*.5+.5)*innerWidth,24,innerWidth-24);
+ const y=THREE.MathUtils.clamp((-top.y*.5+.5)*innerHeight-12,54,innerHeight-90);
+ button.style.left=x+'px';button.style.top=y+'px';button.classList.add('show');
+}
+
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);outline.setSize(innerWidth,innerHeight);}
+addEventListener('resize',resize);function clampCameraAbovePlatformBottom(){
+ if(camera.position.y<PLATFORM_BOTTOM_Y+.015){
+  camera.position.y=PLATFORM_BOTTOM_Y+.015;
+  controls.update();
+ }
+}
+function animate(){requestAnimationFrame(animate);updateCameraFloorLimit();controls.update();clampCameraAbovePlatformBottom();positionPartDeleteButton();composer.render();}resize();
+window.__pokemonModuleReady=true;
+window.__openPokemonCategory=(part)=>{
+ const button=[...document.querySelectorAll('.cat')].find(x=>x.dataset.part===part);
+ if(button)activateCategoryButton(button);
+};
+window.__loadPokemonModel=(url,name)=>addWholeModel(url,name,true);
+renderParts();loadCatalog();animate();
+</script>
+
+
+<script>
+(function(){
+ const labels={head:'頭部',torso:'身體',arms:'手',legs:'腳',tail:'尾巴',wings:'翅膀'};
+ const names=["Bulbasaur", "Ivysaur", "Venusaur", "Charmander", "Charmeleon", "Charizard", "Squirtle", "Wartortle", "Blastoise", "Caterpie", "Metapod", "Butterfree", "Weedle", "Kakuna", "Beedrill", "Pidgey", "Pidgeotto", "Pidgeot", "Rattata", "Raticate", "Spearow", "Fearow", "Ekans", "Arbok", "Pikachu", "Raichu", "Sandshrew", "Sandslash", "Nidoran♀", "Nidorina", "Nidoqueen", "Nidoran♂", "Nidorino", "Nidoking", "Clefairy", "Clefable", "Vulpix", "Ninetales", "Jigglypuff", "Wigglytuff", "Zubat", "Golbat", "Oddish", "Gloom", "Vileplume", "Paras", "Parasect", "Venonat", "Venomoth", "Diglett", "Dugtrio", "Meowth", "Persian", "Psyduck", "Golduck", "Mankey", "Primeape", "Growlithe", "Arcanine", "Poliwag", "Poliwhirl", "Poliwrath", "Abra", "Kadabra", "Alakazam", "Machop", "Machoke", "Machamp", "Bellsprout", "Weepinbell", "Victreebel", "Tentacool", "Tentacruel", "Geodude", "Graveler", "Golem", "Ponyta", "Rapidash", "Slowpoke", "Slowbro", "Magnemite", "Magneton", "Farfetchd", "Doduo", "Dodrio", "Seel", "Dewgong", "Grimer", "Muk", "Shellder", "Cloyster", "Gastly", "Haunter", "Gengar", "Onix", "Drowzee", "Hypno", "Krabby", "Kingler", "Voltorb", "Electrode", "Exeggcute", "Exeggutor", "Cubone", "Marowak", "Hitmonlee", "Hitmonchan", "Lickitung", "Koffing", "Weezing", "Rhyhorn", "Rhydon", "Chansey", "Tangela", "Kangaskhan", "Horsea", "Seadra", "Goldeen", "Seaking", "Staryu", "Starmie", "Mr Mime", "Scyther", "Jynx", "Electabuzz", "Magmar", "Pinsir", "Tauros", "Magikarp", "Gyarados", "Lapras", "Ditto", "Eevee", "Vaporeon", "Jolteon", "Flareon", "Porygon", "Omanyte", "Omastar", "Kabuto", "Kabutops", "Aerodactyl", "Snorlax", "Articuno", "Zapdos", "Moltres", "Dratini", "Dragonair", "Dragonite", "Mewtwo", "Mew"];
+ let lastTap=0,lastPart='';
+ function diag(msg,isError){
+  const d=document.getElementById('v29Diag'),h=document.getElementById('hint');
+  if(d){d.textContent=msg;d.classList.add('show');d.style.background=isError?'#ffe5e5':'#f4e8f3';d.style.color=isError?'#8a2525':'#604969';}
+  if(h)h.textContent=msg;
+ }
+ function makeFallbackList(){
+  const list=document.getElementById('splitCatalog');
+  if(!list||list.querySelector('.modelChoice'))return;
+  list.innerHTML='';
+  names.forEach((name,i)=>{
+   const b=document.createElement('button');
+   b.type='button';b.className='choice modelChoice';
+   b.innerHTML='<div class="preview" style="font-size:25px">🧬</div><b>'+name+'</b><small>#'+(i+1)+' · 點擊載入 3D 模型</small>';
+   b.addEventListener('click',function(){
+    if(window.__pokemonModuleReady&&window.__loadPokemonModel){
+     window.__loadPokemonModel('https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt/regular/'+(i+1)+'.glb',name);
+    }else{
+     diag('已收到模型選取，但 3D 引擎尚未啟動。請確認網路可連線，並把下方錯誤訊息截圖給我。',true);
+    }
+   });
+   list.appendChild(b);
+  });
+ }
+ window.__partClickV29=function(part,button){
+  const now=Date.now();
+  if(now-lastTap<350&&lastPart===part)return;
+  lastTap=now;lastPart=part;
+  if(button)button.dataset.v29Handled='1';
+  document.querySelectorAll('.cat').forEach(x=>x.classList.toggle('active',x.dataset.part===part));
+  const shelf=document.getElementById('shelf');
+  const title=document.getElementById('shelfTitle');
+  const split=document.getElementById('splitPane');
+  const catalog=document.getElementById('splitCatalog');
+  const library=document.getElementById('partLibrary');
+  if(shelf)shelf.classList.add('open');
+  if(title)title.textContent='選擇'+(labels[part]||'寶可夢');
+  if(split)split.classList.add('active');
+  if(catalog)catalog.hidden=false;
+  if(library)library.hidden=true;
+  diag('已收到「'+(labels[part]||part)+'」點擊。正在檢查 3D 引擎…',false);
+  if(window.__pokemonModuleReady&&window.__openPokemonCategory){
+   try{
+    window.__openPokemonCategory(part);
+    const d=document.getElementById('v29Diag');if(d)d.classList.remove('show');
+    return;
+   }catch(e){diag('點擊有收到，但開啟清單失敗：'+(e.message||e),true);}
+  }else{
+   makeFallbackList();
+   setTimeout(function(){
+    if(!window.__pokemonModuleReady){
+     diag('按鈕已正常收到點擊，但 3D 引擎沒有啟動。請確認網路可連線；如果你是直接開啟 HTML，請改用 Chrome 重新開啟。',true);
+    }
+   },1800);
+  }
+ };
+ window.addEventListener('error',function(e){
+  const msg=(e.message||e.error&&e.error.message||'未知錯誤');
+  diag('程式錯誤：'+String(msg).slice(0,150),true);
+ },true);
+ window.addEventListener('unhandledrejection',function(e){
+  const msg=e.reason&&e.reason.message||e.reason||'未知錯誤';
+  diag('載入錯誤：'+String(msg).slice(0,150),true);
+ });
+})();
+</script>
+
+
+
+<script>
+(function(){
+ const close=document.getElementById('closeShelf');
+ if(close)close.addEventListener('click',function(){document.getElementById('shelf')?.classList.remove('open');});
+})();
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"7939e04a4baf43c8b86a560f74aac60e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1c1c7799c54e46349cc23295b5e08299","spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
